@@ -4,6 +4,7 @@ Global and local dictionaries, + initialization/utility functions.
 
 global_dict = {}
 
+
 def init_global_dict():
     """
     Initialize global dictionary with twill3 commands.
@@ -11,15 +12,17 @@ def init_global_dict():
     This must be done after all the other modules are loaded, so that all
     of the commands are already defined.
     """
-    exec "from twill3.commands import *" in global_dict
+    exec("from twill3.commands import *", global_dict)
     import twill3.commands
     command_list = twill3.commands.__all__
-    
+
     import twill3.parse
     twill3.parse.command_list.extend(command_list)
 
+
 # local dictionaries.
 _local_dict_stack = []
+
 
 ###
 
@@ -34,11 +37,13 @@ def new_local_dict():
 
     return d
 
+
 def pop_local_dict():
     """
     Get rid of the current local dictionary.
     """
     _local_dict_stack.pop()
+
 
 ###
 

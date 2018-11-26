@@ -52,7 +52,7 @@ def check_links(pattern = '', visited={}):
     from twill3 import commands
 
     if DEBUG:
-        print 'in check_links'
+        print('in check_links')
     
     OUT = commands.OUT
     browser = commands.browser
@@ -77,7 +77,7 @@ def check_links(pattern = '', visited={}):
     links = list(browser._browser.links())
     if not links:
         if DEBUG:
-            print>>OUT, "no links to check!?"
+            print("no links to check!?", file=OUT)
         return
         
     for link in links:
@@ -86,20 +86,20 @@ def check_links(pattern = '', visited={}):
 
         if not (url.startswith('http://') or url.startswith('https://')):
             if DEBUG:
-               print>>OUT, "url '%s' is not an HTTP link; ignoring" % (url,)
+               print("url '%s' is not an HTTP link; ignoring" % (url,), file=OUT)
             continue
 
         if regexp:
             if regexp.search(url):
                 collected_urls[url] = link
                 if DEBUG:
-                    print>>OUT, "Gathered URL %s -- matched regexp" % (url,)
+                    print("Gathered URL %s -- matched regexp" % (url,), file=OUT)
             elif DEBUG:
-                print>>OUT, "URL %s doesn't match regexp" % (url,)
+                print("URL %s doesn't match regexp" % (url,), file=OUT)
         else:
             collected_urls[url] = link
             if DEBUG:
-                print>>OUT, "Gathered URL %s." % (url,)
+                print("Gathered URL %s." % (url,), file=OUT)
 
     #
     # now, for each unique URL, follow the link. Trap ALL exceptions
@@ -107,13 +107,13 @@ def check_links(pattern = '', visited={}):
     #
 
     failed = []
-    for link in collected_urls.values():
+    for link in list(collected_urls.values()):
         went = False
         try:
             if DEBUG:
-                print>>OUT, "Trying %s" % (link.absolute_url,),
+                print("Trying %s" % (link.absolute_url,), end=' ', file=OUT)
                 
-            if not visited.has_key(link.absolute_url):
+            if link.absolute_url not in visited:
                 went = True
                 browser.follow_link(link)
                 
@@ -123,14 +123,14 @@ def check_links(pattern = '', visited={}):
                 visited[link.absolute_url] = 1
                 
                 if DEBUG:
-                    print>>OUT, '...success!'
+                    print('...success!', file=OUT)
             else:
                 if DEBUG:
-                    print>>OUT, ' (already visited successfully)'
+                    print(' (already visited successfully)', file=OUT)
         except:
             failed.append(link.absolute_url)
             if DEBUG:
-                print>>OUT, '...failure ;('
+                print('...failure ;(', file=OUT)
 
         if went:
             browser.back()
@@ -139,12 +139,12 @@ def check_links(pattern = '', visited={}):
         if commands._options['check_links.only_collect_bad_links']:
             for l in failed:
                 refering_pages = bad_links_dict.get(l, [])
-                print '***', browser.get_url()
+                print('***', browser.get_url())
                 refering_pages.append(browser.get_url())
                 bad_links_dict[l] = refering_pages
         else:
-            print>>OUT, '\nCould not follow %d links' % (len(failed),)
-            print>>OUT, '\t%s\n' % '\n\t'.join(failed)
+            print('\nCould not follow %d links' % (len(failed),), file=OUT)
+            print('\t%s\n' % '\n\t'.join(failed), file=OUT)
             raise TwillAssertionError("broken links on page")
 
 def report_bad_links(fail_if_exist='+', flush_bad_links='+'):
@@ -171,13 +171,13 @@ def report_bad_links(fail_if_exist='+', flush_bad_links='+'):
     OUT = commands.OUT
 
     if not bad_links_dict:
-        print>>OUT, '\nNo bad links to report.\n'
+        print('\nNo bad links to report.\n', file=OUT)
     else:
-        print>>OUT, '\nCould not follow %d links' % (len(bad_links_dict),)
-        for page, referers in bad_links_dict.items():
+        print('\nCould not follow %d links' % (len(bad_links_dict),), file=OUT)
+        for page, referers in list(bad_links_dict.items()):
             err_msg = "\t link '%s' (occurs on: " % (page,)\
                       + ",".join(referers) + ')' 
-            print>>OUT, err_msg
+            print(err_msg, file=OUT)
 
         if flush_bad_links:
             bad_links_dict = {}

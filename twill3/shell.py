@@ -7,12 +7,13 @@ This is an implementation of a command-line interpreter based on the
 
 import cmd
 from twill3 import commands, parse, __version__
-import namespaces
+from . import namespaces
 
 try:
     import readline
 except:
     readline = None
+
 
 def make_cmd_fn(cmd):
     """
@@ -20,7 +21,7 @@ def make_cmd_fn(cmd):
     function name.  (This is where the twill3.commands functions actually
     get executed.)
     """
-    
+
     def do_cmd(rest_of_line, cmd=cmd):
         global_dict, local_dict = namespaces.get_twill_glocals()
 
@@ -28,9 +29,9 @@ def make_cmd_fn(cmd):
         if rest_of_line.strip() != "":
             try:
                 args = parse.arguments.parseString(rest_of_line)[0]
-                args = parse.process_args(args, global_dict,local_dict)
-            except Exception, e:
-                print '\nINPUT ERROR: %s\n' % (str(e),)
+                args = parse.process_args(args, global_dict, local_dict)
+            except Exception as e:
+                print('\nINPUT ERROR: %s\n' % (str(e),))
                 return
 
         try:
@@ -38,25 +39,28 @@ def make_cmd_fn(cmd):
                                   "<shell>")
         except SystemExit:
             raise
-        except Exception, e:
-            print '\nERROR: %s\n' % (str(e),)
+        except Exception as e:
+            print('\nERROR: %s\n' % (str(e),))
 
     return do_cmd
+
 
 def make_help_cmd(cmd, docstring):
     """
     Dynamically define a twill3 shell help function for the given
     command/docstring.
     """
+
     def help_cmd(message=docstring, cmd=cmd):
-        print '=' * 15
-        print '\nHelp for command %s:\n' % (cmd,)
-        print message.strip()
-        print ''
-        print '=' * 15
-        print ''
-        
+        print('=' * 15)
+        print('\nHelp for command %s:\n' % (cmd,))
+        print(message.strip())
+        print('')
+        print('=' * 15)
+        print('')
+
     return help_cmd
+
 
 ###
 
@@ -68,9 +72,10 @@ class Singleton(object):
         cls.__it__ = it = object.__new__(cls)
         it.init(*args, **kwds)
         return it
-    
+
     def init(self, *args, **kwds):
         pass
+
 
 #
 # TwillCommandLoop
@@ -80,9 +85,11 @@ def add_command(cmd, docstring):
     x = get_command_shell()
     if x:
         x.add_command(cmd, docstring)
-        
+
+
 def get_command_shell():
     return getattr(TwillCommandLoop, '__it__', None)
+
 
 class TwillCommandLoop(Singleton, cmd.Cmd):
     """
@@ -92,8 +99,9 @@ class TwillCommandLoop(Singleton, cmd.Cmd):
     Note: most of the do_ and help_ functions are dynamically created
     by the metaclass.
     """
+
     def init(self, **kw):
-        if kw.has_key('stdin'):
+        if 'stdin' in kw:
             cmd.Cmd.__init__(self, None, stdin=kw['stdin'])
             self.use_rawinput = False
         else:
@@ -115,11 +123,11 @@ class TwillCommandLoop(Singleton, cmd.Cmd):
         # handle initial URL argument
         if kw.get('initial_url'):
             commands.go(kw['initial_url'])
-            
+
         self._set_prompt()
 
         self.names = []
-        
+
         global_dict, local_dict = namespaces.get_twill_glocals()
 
         ### add all of the commands from twill3.
@@ -158,6 +166,7 @@ class TwillCommandLoop(Singleton, cmd.Cmd):
             formname = args[0]
             return self.provide_field(formname, text)
         return []
+
     complete_fv = complete_formvalue
 
     def provide_formname(self, prefix):
@@ -202,7 +211,7 @@ class TwillCommandLoop(Singleton, cmd.Cmd):
     def postcmd(self, stop, line):
         "Run after each command; set prompt."
         self._set_prompt()
-        
+
         return stop
 
     def default(self, line):
@@ -225,8 +234,8 @@ class TwillCommandLoop(Singleton, cmd.Cmd):
                                   "<shell>")
         except SystemExit:
             raise
-        except Exception, e:
-            print '\nERROR: %s\n' % (str(e),)
+        except Exception as e:
+            print('\nERROR: %s\n' % (str(e),))
             if self.fail_on_unknown:
                 raise
 
@@ -238,41 +247,44 @@ class TwillCommandLoop(Singleton, cmd.Cmd):
         "Exit on CTRL-D"
         if readline:
             readline.write_history_file('.twill3-history')
-            
+
         raise SystemExit()
 
     def help_help(self):
-        print "\nWhat do YOU think the command 'help' does?!?\n"
+        print("\nWhat do YOU think the command 'help' does?!?\n")
 
     def do_version(self, *args):
-        print "\ntwill3 version %s.\n" % (__version__,)
-        print "See http://www.idyll.org/~t/www-tools/twill3/ for more info."
-        print ""
+        print("\ntwill3 version %s.\n" % (__version__,))
+        print("See http://www.idyll.org/~t/www-tools/twill3/ for more info.")
+        print("")
 
     def help_version(self):
-        print "\nPrint version information.\n"
+        print("\nPrint version information.\n")
 
     def do_exit(self, *args):
         raise SystemExit()
 
     def help_exit(self):
-        print "\nExit twill3.\n"
+        print("\nExit twill3.\n")
 
     do_quit = do_exit
     help_quit = help_exit
 
+
 ####
 
-twillargs = []                          # contains sys.argv *after* last '--'
-interactive = False                     # 'True' if interacting with user
+twillargs = []  # contains sys.argv *after* last '--'
+interactive = False  # 'True' if interacting with user
+
+
 def main():
     global twillargs, interactive
-    
+
     import sys
     from twill3 import TwillCommandLoop, execute_file, __version__
     from twill3.utils import gather_filenames
     from optparse import OptionParser
-    from cStringIO import StringIO
+    from io import StringIO
 
     ###
     # make sure that the current working directory is in the path.  does this
@@ -287,20 +299,20 @@ def main():
     parser = OptionParser()
 
     parser.add_option('-q', '--quiet', action="store_true", dest="quiet",
-                      help = 'do not show normal output')
+                      help='do not show normal output')
 
     parser.add_option('-i', '--interactive', action="store_true", dest="interact",
-              help = 'drop into an interactive shell after running files (if any)')
+                      help='drop into an interactive shell after running files (if any)')
 
     parser.add_option('-f', '--fail', action="store_true", dest="fail",
-                      help = 'fail exit on first file to fail')
+                      help='fail exit on first file to fail')
 
     parser.add_option('-n', '--never-fail', action="store_true",
                       dest="never_fail",
-                      help = 'continue executing scripts past errors')
+                      help='continue executing scripts past errors')
 
     parser.add_option('-v', '--version', action="store_true", dest="show_version",
-                      help = 'show version information and exit')
+                      help='show version information and exit')
 
     parser.add_option('-u', '--url', nargs=1, action="store", dest="url",
                       help="start at the given URL before each script")
@@ -323,7 +335,7 @@ def main():
     (options, args) = parser.parse_args(sysargs)
 
     if options.show_version:
-        print 'twill3 version %s.' % (__version__,)
+        print('twill3 version %s.' % (__version__,))
         sys.exit(0)
 
     if options.quiet:
@@ -344,7 +356,7 @@ def main():
         filenames = gather_filenames(args)
 
         for filename in filenames:
-            print '>> EXECUTING FILE', filename
+            print('>> EXECUTING FILE', filename)
 
             try:
                 interactive = False
@@ -352,22 +364,22 @@ def main():
                              initial_url=options.url,
                              never_fail=options.never_fail)
                 success.append(filename)
-            except Exception, e:
+            except Exception as e:
                 if options.fail:
-#                    import pdb
-#                    _, _, tb = sys.exc_info()
-#                    pdb.post_mortem(tb)
+                    #                    import pdb
+                    #                    _, _, tb = sys.exc_info()
+                    #                    pdb.post_mortem(tb)
                     raise
                 else:
-                    print '** UNHANDLED EXCEPTION:', str(e)
+                    print('** UNHANDLED EXCEPTION:', str(e))
                     failure.append(filename)
 
-        print '--'
-        print '%d of %d files SUCCEEDED.' % (len(success),
-                                             len(success) + len(failure),)
+        print('--')
+        print('%d of %d files SUCCEEDED.' % (len(success),
+                                             len(success) + len(failure),))
         if len(failure):
-            print 'Failed:\n\t',
-            print "\n\t".join(failure)
+            print('Failed:\n\t', end=' ')
+            print("\n\t".join(failure))
             failed = True
 
     if not args or options.interact:

@@ -6,9 +6,9 @@ WSGI application.
 Use 'add_wsgi_intercept' and 'remove_wsgi_intercept' to control this behavior.
 """
 import sys
-from httplib import HTTPConnection
-import urllib
-from cStringIO import StringIO
+from http.client import HTTPConnection
+import urllib.request, urllib.parse, urllib.error
+from io import StringIO
 import traceback
 
 debuglevel = 0
@@ -43,7 +43,7 @@ def remove_wsgi_intercept(host, port):
     Remove the WSGI intercept call for (host, port).
     """
     key = (host, port)
-    if _wsgi_intercept.has_key(key):
+    if key in _wsgi_intercept:
         del _wsgi_intercept[key]
 
 #
@@ -99,14 +99,14 @@ def make_environ(inp, host, port, script_name):
             environ['HTTP_' + h] = v
             
         if debuglevel >= 2:
-            print 'HEADER:', k, v
+            print(('HEADER:', k, v))
 
     #
     # decode the method line
     #
 
     if debuglevel >= 2:
-        print 'METHOD LINE:', method_line
+        print(('METHOD LINE:', method_line))
         
     method, url, protocol = method_line.split(' ')
 
@@ -117,13 +117,13 @@ def make_environ(inp, host, port, script_name):
         url = url[len(script_name):]
 
     url = url.split('?', 1)
-    path_info = urllib.unquote_plus(url[0])
+    path_info = urllib.parse.unquote_plus(url[0])
     query_string = ""
     if len(url) == 2:
-        query_string = urllib.unquote_plus(url[1])
+        query_string = urllib.parse.unquote_plus(url[1])
 
     if debuglevel:
-        print "method: %s; script_name: %s; path_info: %s; query_string: %s" % (method, script_name, path_info, query_string)
+        print(("method: %s; script_name: %s; path_info: %s; query_string: %s" % (method, script_name, path_info, query_string)))
 
     r = inp.read()
     inp = StringIO(r)
@@ -163,11 +163,11 @@ def make_environ(inp, host, port, script_name):
     if content_type:
         environ['CONTENT_TYPE'] = content_type
         if debuglevel >= 2:
-            print 'CONTENT-TYPE:', content_type
+            print(('CONTENT-TYPE:', content_type))
     if content_length:
         environ['CONTENT_LENGTH'] = content_length
         if debuglevel >= 2:
-            print 'CONTENT-LENGTH:', content_length
+            print(('CONTENT-LENGTH:', content_length))
 
     #
     # handle cookies.
@@ -176,7 +176,7 @@ def make_environ(inp, host, port, script_name):
         environ['HTTP_COOKIE'] = "; ".join(cookies)
 
     if debuglevel:
-        print 'WSGI environ dictionary:', environ
+        print(('WSGI environ dictionary:', environ))
 
     return environ
 
@@ -259,7 +259,7 @@ class wsgi_fake_socket:
         try:
             generator_data = None
             try:
-                generator_data = self.result.next()
+                generator_data = next(self.result)
 
             finally:
                 for data in self.write_results:
@@ -269,7 +269,7 @@ class wsgi_fake_socket:
                 self.output.write(generator_data)
 
                 while 1:
-                    data = self.result.next()
+                    data = next(self.result)
                     self.output.write(data)
                     
         except StopIteration:
@@ -279,7 +279,7 @@ class wsgi_fake_socket:
             app_result.close()
             
         if debuglevel >= 2:
-            print "***", self.output.getvalue(), "***"
+            print(("***", self.output.getvalue(), "***"))
 
         # return the concatenated results.
         return StringIO(self.output.getvalue())
@@ -289,7 +289,7 @@ class wsgi_fake_socket:
         Save all the traffic to self.inp.
         """
         if debuglevel >= 2:
-            print ">>>", str, ">>>"
+            print((">>>", str, ">>>"))
 
         self.inp.write(str)
 
@@ -314,7 +314,7 @@ class WSGI_HTTPConnection(HTTPConnection):
 
         app, script_name = None, None
         
-        if _wsgi_intercept.has_key(key):
+        if key in _wsgi_intercept:
             (app_fn, script_name) = _wsgi_intercept[key]
             app = app_fn()
 
@@ -339,7 +339,7 @@ class WSGI_HTTPConnection(HTTPConnection):
             else:
                 HTTPConnection.connect(self)
                 
-        except Exception, e:
+        except Exception as e:
             if debuglevel:              # intercept & print out tracebacks
                 traceback.print_exc()
             raise

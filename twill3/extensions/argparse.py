@@ -32,7 +32,7 @@ def get_args(require=0):
         for i, arg in enumerate(shell.twillargs):
             global_dict["arg%d" % (i + 1,)] = arg
 
-        print>>commands.OUT, "get_args: loaded %d args as $arg1..$arg%d." % \
-                             (i + 1, i + 1)
+        print("get_args: loaded %d args as $arg1..$arg%d." % \
+                             (i + 1, i + 1), file=commands.OUT)
     else:
-        print>>commands.OUT, "no arguments to parse!"
+        print("no arguments to parse!", file=commands.OUT)

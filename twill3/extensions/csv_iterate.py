@@ -26,7 +26,7 @@ def csv_iterate(filename, scriptname):
     reader = csv.reader(open(filename, "rb"))
     for i, row in enumerate(reader):
         if DEBUG:
-            print>>commands.OUT,'csv_iterate: on row %d of %s' % (i, filename,)
+            print('csv_iterate: on row %d of %s' % (i, filename,), file=commands.OUT)
         for i, col in enumerate(row):
             global_dict["col%d" % (i + 1,)] = col
 

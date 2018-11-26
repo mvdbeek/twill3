@@ -9,7 +9,7 @@ COPYING.txt included with the distribution).
 
 """
 
-import os, urllib2, bisect, urllib, httplib, types, tempfile
+import os, urllib.request, urllib.error, urllib.parse, bisect, urllib.request, urllib.parse, urllib.error, http.client, types, tempfile
 try:
     import threading as _threading
 except ImportError:
@@ -20,23 +20,23 @@ except NameError:
     import sets
     set = sets.Set
 
-import _http
-import _upgrade
-import _rfc3986
-import _response
-from _util import isstringlike
-from _request import Request
+from . import _http
+from . import _upgrade
+from . import _rfc3986
+from . import _response
+from ._util import isstringlike
+from ._request import Request
 
 
-class ContentTooShortError(urllib2.URLError):
+class ContentTooShortError(urllib.error.URLError):
     def __init__(self, reason, result):
-        urllib2.URLError.__init__(self, reason)
+        urllib.error.URLError.__init__(self, reason)
         self.result = result
 
 
-class OpenerDirector(urllib2.OpenerDirector):
+class OpenerDirector(urllib.request.OpenerDirector):
     def __init__(self):
-        urllib2.OpenerDirector.__init__(self)
+        urllib.request.OpenerDirector.__init__(self)
         # really none of these are (sanely) public -- the lack of initial
         # underscore on some is just due to following urllib2
         self.process_response = {}
@@ -118,14 +118,14 @@ class OpenerDirector(urllib2.OpenerDirector):
         # sort indexed methods
         # XXX could be cleaned up
         for lookup in [process_request, process_response]:
-            for scheme, handlers in lookup.iteritems():
+            for scheme, handlers in list(lookup.items()):
                 lookup[scheme] = handlers
-        for scheme, lookup in handle_error.iteritems():
-            for code, handlers in lookup.iteritems():
+        for scheme, lookup in list(handle_error.items()):
+            for code, handlers in list(lookup.items()):
                 handlers = list(handlers)
                 handlers.sort()
                 lookup[code] = handlers
-        for scheme, handlers in handle_open.iteritems():
+        for scheme, handlers in list(handle_open.items()):
             handlers = list(handlers)
             handlers.sort()
             handle_open[scheme] = handlers
@@ -176,8 +176,8 @@ class OpenerDirector(urllib2.OpenerDirector):
 
         # In Python >= 2.4, .open() supports processors already, so we must
         # call ._open() instead.
-        urlopen = getattr(urllib2.OpenerDirector, "_open",
-                          urllib2.OpenerDirector.open)
+        urlopen = getattr(urllib.request.OpenerDirector, "_open",
+                          urllib.request.OpenerDirector.open)
         response = urlopen(self, req, data)
 
         # post-process response
@@ -206,13 +206,13 @@ class OpenerDirector(urllib2.OpenerDirector):
             meth_name = proto + '_error'
             http_err = 0
         args = (dict, proto, meth_name) + args
-        result = apply(self._call_chain, args)
+        result = self._call_chain(*args)
         if result:
             return result
 
         if http_err:
             args = (dict, 'default', 'http_error_default') + orig_args
-            return apply(self._call_chain, args)
+            return self._call_chain(*args)
 
     BLOCK_SIZE = 1024*8
     def retrieve(self, fullurl, filename=None, reporthook=None, data=None):
@@ -283,7 +283,7 @@ class OpenerDirector(urllib2.OpenerDirector):
         return result
 
     def close(self):
-        urllib2.OpenerDirector.close(self)
+        urllib.request.OpenerDirector.close(self)
 
         # make it very obvious this object is no longer supposed to be used
         self.open = self.error = self.retrieve = self.add_handler = None
@@ -301,7 +301,7 @@ def wrapped_open(urlopen, process_response_object, fullurl, data=None):
     success = True
     try:
         response = urlopen(fullurl, data)
-    except urllib2.HTTPError, error:
+    except urllib.error.HTTPError as error:
         success = False
         if error.fp is None:  # not a response
             raise
@@ -336,13 +336,13 @@ class OpenerFactory:
 
     default_classes = [
         # handlers
-        urllib2.ProxyHandler,
-        urllib2.UnknownHandler,
+        urllib.request.ProxyHandler,
+        urllib.request.UnknownHandler,
         _http.HTTPHandler,  # derived from new AbstractHTTPHandler
         _http.HTTPDefaultErrorHandler,
         _http.HTTPRedirectHandler,  # bugfixed
-        urllib2.FTPHandler,
-        urllib2.FileHandler,
+        urllib.request.FTPHandler,
+        urllib.request.FileHandler,
         # processors
         _upgrade.HTTPRequestUpgradeProcessor,
         _http.HTTPCookieProcessor,
@@ -371,7 +371,7 @@ class OpenerFactory:
         skip = []
         for klass in default_classes:
             for check in handlers:
-                if type(check) == types.ClassType:
+                if type(check) == type:
                     if issubclass(check, klass):
                         skip.append(klass)
                 elif type(check) == types.InstanceType:
@@ -383,7 +383,7 @@ class OpenerFactory:
         for klass in default_classes:
             opener.add_handler(klass())
         for h in handlers:
-            if type(h) == types.ClassType:
+            if type(h) == type:
                 h = h()
             opener.add_handler(h)
 

@@ -1,7 +1,7 @@
 import logging
 
-from urllib2 import BaseHandler
-from _response import response_seek_wrapper
+from urllib.request import BaseHandler
+from ._response import response_seek_wrapper
 
 
 class HTTPResponseDebugProcessor(BaseHandler):

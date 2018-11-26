@@ -8,17 +8,17 @@ COPYING.txt included with the distribution).
 
 """
 
-import urllib2, urllib, logging
+import urllib.request, urllib.error, urllib.parse, urllib.request, urllib.parse, urllib.error, logging
 
-from _clientcookie import request_host
-import _rfc3986
+from ._clientcookie import request_host
+from . import _rfc3986
 
 warn = logging.getLogger("mechanize").warning
 # don't complain about missing logging handler
 logging.getLogger("mechanize").setLevel(logging.ERROR)
 
 
-class Request(urllib2.Request):
+class Request(urllib.request.Request):
     def __init__(self, url, data=None, headers={},
                  origin_req_host=None, unverifiable=False, visit=None):
         # In mechanize 0.2, the interpretation of a unicode url argument will
@@ -33,7 +33,7 @@ class Request(urllib2.Request):
                  "(contains illegal characters) %r" % url)
         url = url.strip("'")
         url = url.strip('"')
-        urllib2.Request.__init__(self, url, data, headers)
+        urllib.request.Request.__init__(self, url, data, headers)
         self.selector = None
         self.unredirected_hdrs = {}
         self.visit = visit
@@ -51,7 +51,7 @@ class Request(urllib2.Request):
         self.origin_req_host = origin_req_host
 
     def get_selector(self):
-        return urllib.splittag(self.__r_host)[0]
+        return urllib.parse.splittag(self.__r_host)[0]
 
     def get_origin_req_host(self):
         return self.origin_req_host
@@ -76,7 +76,7 @@ class Request(urllib2.Request):
     def header_items(self):
         hdrs = self.unredirected_hdrs.copy()
         hdrs.update(self.headers)
-        return hdrs.items()
+        return list(hdrs.items())
 
     def __str__(self):
         return "<Request for %s>" % self.get_full_url()

@@ -1,8 +1,8 @@
-from urllib2 import BaseHandler
+from urllib.request import BaseHandler
 
-from _request import Request
-from _response import upgrade_response
-from _util import deprecation
+from ._request import Request
+from ._response import upgrade_response
+from ._util import deprecation
 
 
 class HTTPRequestUpgradeProcessor(BaseHandler):

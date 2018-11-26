@@ -21,10 +21,10 @@ def chdir(where):
     
     cwd = os.getcwd()
     _dirstack.append(cwd)
-    print cwd
+    print(cwd)
 
     os.chdir(where)
-    print>>commands.OUT, 'changed directory to "%s"' % (where,)
+    print('changed directory to "%s"' % (where,), file=commands.OUT)
 
     commands.setglobal('__dir__', where)
 
@@ -39,6 +39,6 @@ def popd():
     
     where = _dirstack.pop()
     os.chdir(where)
-    print>>commands.OUT, 'popped back to directory "%s"' % (where,)
+    print('popped back to directory "%s"' % (where,), file=commands.OUT)
 
     commands.setglobal('__dir__', where)

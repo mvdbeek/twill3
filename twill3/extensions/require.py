@@ -54,7 +54,7 @@ def _require_post_load_hook(action, *args, **kwargs):
         
         if what == 'success':
             if DEBUG:
-                print>>OUT, 'REQUIRING success'
+                print('REQUIRING success', file=OUT)
             commands.code(200)
             
         ####
@@ -62,13 +62,13 @@ def _require_post_load_hook(action, *args, **kwargs):
         ####
             
         elif what == 'links_ok':
-            from check_links import check_links
+            from .check_links import check_links
             
             ignore_always = True
             if DEBUG:
-                print>>OUT, 'REQUIRING functioning links'
-                print>>OUT, '(already visited:)'
-                print "\n\t".join(links_visited.keys())
+                print('REQUIRING functioning links', file=OUT)
+                print('(already visited:)', file=OUT)
+                print("\n\t".join(list(links_visited.keys())))
                 
             try:
                 check_links(visited=links_visited)
@@ -109,7 +109,7 @@ def require(what):
 
     if _require_post_load_hook not in commands.browser._post_load_hooks:
         if DEBUG:
-            print>>commands.OUT, 'INSTALLING POST-LOAD HOOK'
+            print('INSTALLING POST-LOAD HOOK', file=commands.OUT)
         commands.browser._post_load_hooks.append(_require_post_load_hook)
 
     #
@@ -118,7 +118,7 @@ def require(what):
 
     if what not in _requirements:
         if DEBUG:
-            print>>commands.OUT, 'Adding requirement', what
+            print('Adding requirement', what, file=commands.OUT)
         _requirements.append(what)
 
 def no_require():

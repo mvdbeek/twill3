@@ -1,6 +1,6 @@
-import urllib2
-from cStringIO import StringIO
-import _response
+import urllib.request, urllib.error, urllib.parse
+from io import StringIO
+from . import _response
 
 # GzipConsumer was taken from Fredrik Lundh's effbot.org-0.1-20041009 library
 class GzipConsumer:
@@ -85,7 +85,7 @@ class stupid_gzip_wrapper(_response.closeable_response):
         # delegate unknown methods/attributes
         return getattr(self._response, name)
 
-class HTTPGzipProcessor(urllib2.BaseHandler):
+class HTTPGzipProcessor(urllib.request.BaseHandler):
     handler_order = 200  # response processing before HTTPEquivProcessor
 
     def http_request(self, request):

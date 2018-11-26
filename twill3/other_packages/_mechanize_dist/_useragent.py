@@ -11,13 +11,13 @@ included with the distribution).
 
 """
 
-import sys, warnings, urllib2
+import sys, warnings, urllib.request, urllib.error, urllib.parse
 
-import _opener
-import _urllib2
-import _auth
-import _gzip
-import _response
+from . import _opener
+from . import _urllib2
+from . import _auth
+from . import _gzip
+from . import _response
 
 
 class UserAgentBase(_opener.OpenerDirector):
@@ -99,7 +99,7 @@ class UserAgentBase(_opener.OpenerDirector):
                        self.default_features):
             klass = self.handler_classes[scheme]
             ua_handlers[scheme] = klass()
-        for handler in ua_handlers.itervalues():
+        for handler in list(ua_handlers.values()):
             self.add_handler(handler)
 
         # Yuck.
@@ -154,14 +154,14 @@ class UserAgentBase(_opener.OpenerDirector):
             want[scheme] = None
 
         # get rid of scheme handlers we don't want
-        for scheme, oldhandler in self._ua_handlers.items():
+        for scheme, oldhandler in list(self._ua_handlers.items()):
             if scheme.startswith("_"): continue  # not a scheme handler
             if scheme not in want:
                 self._replace_handler(scheme, None)
             else:
                 del want[scheme]  # already got it
         # add the scheme handlers that are missing
-        for scheme in want.keys():
+        for scheme in list(want.keys()):
             self._set_handler(scheme, True)
 
     def set_cookiejar(self, cookiejar):

@@ -38,7 +38,7 @@ parsing strategy specific to an XML schema or a particular bizarre
 HTML document. Typically your subclass would just override
 SELF_CLOSING_TAGS and/or NESTABLE_TAGS.
 """ #"
-from __future__ import generators
+
 
 __author__ = "Leonard Richardson (leonardr@segfault.org)"
 __version__ = "2.1.1"
@@ -175,7 +175,7 @@ class PageElement:
         g = generator()
         while True:
             try:
-                i = g.next()
+                i = next(g)
             except StopIteration:
                 break
             found = None
@@ -183,7 +183,7 @@ class PageElement:
                 if not text:
                     if not name or self._matches(i, name):
                         match = True
-                        for attr, matchAgainst in attrs.items():
+                        for attr, matchAgainst in list(attrs.items()):
                             check = i.get(attr)
                             if not self._matches(check, matchAgainst):
                                 match = False
@@ -204,7 +204,7 @@ class PageElement:
     def nextGenerator(self):
         i = self
         while i:
-            i = i.next
+            i = i.__next__
             yield i
 
     def nextSiblingGenerator(self):
@@ -248,7 +248,7 @@ class PageElement:
             #ways of matching match the tag name as a string
             chunk = chunk.name
         #Now we know that chunk is a string
-        if not isinstance(chunk, basestring):
+        if not isinstance(chunk, str):
             chunk = str(chunk)
         if hasattr(howToMatch, 'match'):
             # It's a regexp object.
@@ -256,7 +256,7 @@ class PageElement:
         if isList(howToMatch):
             return chunk in howToMatch
         if hasattr(howToMatch, 'items'):
-            return howToMatch.has_key(chunk)
+            return chunk in howToMatch
         #It's just a string
         return str(howToMatch) == chunk
 
@@ -267,12 +267,12 @@ class NavigableText(PageElement):
         if attr == 'string':
             return self
         else:
-            raise AttributeError, "'%s' object has no attribute '%s'" % (self.__class__.__name__, attr)
+            raise AttributeError("'%s' object has no attribute '%s'" % (self.__class__.__name__, attr))
         
 class NavigableString(str, NavigableText):
     pass
 
-class NavigableUnicodeString(unicode, NavigableText):
+class NavigableUnicodeString(str, NavigableText):
     pass
 
 class Tag(PageElement):
@@ -311,7 +311,7 @@ class Tag(PageElement):
     def __contains__(self, x):
         return x in self.contents
 
-    def __nonzero__(self):
+    def __bool__(self):
         "A tag is non-None even if it has no contents."
         return True
 
@@ -337,14 +337,14 @@ class Tag(PageElement):
                 #We don't break because bad HTML can define the same
                 #attribute multiple times.
             self._getAttrMap()
-            if self.attrMap.has_key(key):
+            if key in self.attrMap:
                 del self.attrMap[key]
 
     def __call__(self, *args, **kwargs):
         """Calling a tag like a function is the same as calling its
         fetch() method. Eg. tag('a') returns a list of all the A tags
         found within this tag."""
-        return apply(self.fetch, args, kwargs)
+        return self.fetch(*args, **kwargs)
 
     def __getattr__(self, tag):
         if len(tag) > 3 and tag.rfind('Tag') == len(tag)-3:
@@ -418,9 +418,9 @@ class Tag(PageElement):
                 s.append(space)
             s.append(closeTag)
             s = ''.join(s)
-        isUnicode = type(s) == types.UnicodeType
+        isUnicode = type(s) == str
         if needUnicode and not isUnicode:
-            s = unicode(s)
+            s = str(s)
         elif isUnicode and needUnicode==False:
             s = str(s)
         return s
@@ -434,12 +434,12 @@ class Tag(PageElement):
         s=[]
         for c in self:
             text = None
-            if isinstance(c, NavigableUnicodeString) or type(c) == types.UnicodeType:
-                text = unicode(c)
+            if isinstance(c, NavigableUnicodeString) or type(c) == str:
+                text = str(c)
             elif isinstance(c, Tag):
                 s.append(c.__str__(needUnicode, showStructureIndent))
             elif needUnicode:
-                text = unicode(c)
+                text = str(c)
             else:
                 text = str(c)
             if text:
@@ -543,7 +543,7 @@ def isList(l):
     """Convenience method that works with all 2.x versions of Python
     to determine whether or not something is listlike."""
     return hasattr(l, '__iter__') \
-           or (type(l) in (types.ListType, types.TupleType))
+           or (type(l) in (list, tuple))
 
 def buildTagMap(default, *args):
     """Turns a list of maps, lists, or scalars into a single map.
@@ -553,7 +553,7 @@ def buildTagMap(default, *args):
     for portion in args:
         if hasattr(portion, 'items'):
             #It's a map. Merge it.
-            for k,v in portion.items():
+            for k,v in list(portion.items()):
                 built[k] = v
         elif isList(portion):
             #It's a list. Map each item to the default.
@@ -623,11 +623,11 @@ class BeautifulStoneSoup(Tag, SGMLParser):
                  '\x9f' : '&Yuml;',}
 
     PARSER_MASSAGE = [(re.compile('(<[^<>]*)/>'),
-                       lambda(x):x.group(1) + ' />'),
+                       lambda x:x.group(1) + ' />'),
                       (re.compile('<!\s+([^<>]*)>'),
-                       lambda(x):'<!' + x.group(1) + '>'),
+                       lambda x:'<!' + x.group(1) + '>'),
                       (re.compile("([\x80-\x9f])"),
-                       lambda(x): BeautifulStoneSoup.MS_CHARS.get(x.group(1)))
+                       lambda x: BeautifulStoneSoup.MS_CHARS.get(x.group(1)))
                       ]
 
     ROOT_TAG_NAME = '[document]'
@@ -736,7 +736,7 @@ class BeautifulStoneSoup(Tag, SGMLParser):
                 else:
                     currentData = ' '
             c = NavigableString
-            if type(currentData) == types.UnicodeType:
+            if type(currentData) == str:
                 c = NavigableUnicodeString
             o = c(currentData)
             o.setup(self.currentTag, self.previous)
@@ -788,7 +788,7 @@ class BeautifulStoneSoup(Tag, SGMLParser):
 
         nestingResetTriggers = self.NESTABLE_TAGS.get(name)
         isNestable = nestingResetTriggers != None
-        isResetNesting = self.RESET_NESTING_TAGS.has_key(name)
+        isResetNesting = name in self.RESET_NESTING_TAGS
         popTo = None
         inclusive = True
         for i in range(len(self.tagStack)-1, 0, -1):
@@ -801,7 +801,7 @@ class BeautifulStoneSoup(Tag, SGMLParser):
             if (nestingResetTriggers != None
                 and p.name in nestingResetTriggers) \
                 or (nestingResetTriggers == None and isResetNesting
-                    and self.RESET_NESTING_TAGS.has_key(p.name)):
+                    and p.name in self.RESET_NESTING_TAGS):
                 
                 #If we encounter one of the nesting reset triggers
                 #peculiar to this tag, or we encounter another tag
@@ -820,7 +820,7 @@ class BeautifulStoneSoup(Tag, SGMLParser):
         if self.quoteStack:
             #This is not a real tag.
             #print "<%s> is not real!" % name
-            attrs = ''.join(map(lambda(x, y): ' %s="%s"' % (x, y), attrs))
+            attrs = ''.join([' %s="%s"' % (x_y[0], x_y[1]) for x_y in attrs])
             self.handle_data('<%s%s>' % (name, attrs))
             return
         self.endData()
@@ -1049,7 +1049,7 @@ class BeautifulSOAP(BeautifulStoneSoup):
             parent._getAttrMap()
             if (isinstance(tag, Tag) and len(tag.contents) == 1 and
                 isinstance(tag.contents[0], NavigableText) and 
-                not parent.attrMap.has_key(tag.name)):
+                tag.name not in parent.attrMap):
                 parent[tag.name] = tag.contents[0]
         BeautifulStoneSoup.popTag(self)
 
@@ -1077,4 +1077,4 @@ class SimplifyingSOAPParser(BeautifulSOAP):
 if __name__ == '__main__':
     import sys
     soup = BeautifulStoneSoup(sys.stdin.read())
-    print soup.prettify()
+    print((soup.prettify()))

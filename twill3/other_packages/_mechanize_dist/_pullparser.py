@@ -33,10 +33,10 @@ under the terms of the BSD or ZPL 2.1 licenses.
 
 """
 
-import re, htmlentitydefs
-import sgmllib, HTMLParser
+import re, html.entities
+import sgmllib, html.parser
 
-from _html import unescape, unescape_charref
+from ._html import unescape, unescape_charref
 
 
 class NoMoreTokensError(Exception): pass
@@ -141,7 +141,7 @@ class _AbstractParser:
         self.textify = textify
         self.encoding = encoding
         if entitydefs is None:
-            entitydefs = htmlentitydefs.name2codepoint
+            entitydefs = html.entities.name2codepoint
         self._entitydefs = entitydefs
 
     def __iter__(self): return self
@@ -152,7 +152,7 @@ class _AbstractParser:
     def tokens(self, *tokentypes):
         return iter_until_exception(self.get_token, NoMoreTokensError, *tokentypes)
 
-    def next(self):
+    def __next__(self):
         try:
             return self.get_token()
         except NoMoreTokensError:
@@ -306,9 +306,9 @@ class _AbstractParser:
             escaped_attrs.append((key, self.unescape_attr(val)))
         return escaped_attrs
 
-class PullParser(_AbstractParser, HTMLParser.HTMLParser):
+class PullParser(_AbstractParser, html.parser.HTMLParser):
     def __init__(self, *args, **kwds):
-        HTMLParser.HTMLParser.__init__(self)
+        html.parser.HTMLParser.__init__(self)
         _AbstractParser.__init__(self, *args, **kwds)
     def unescape(self, name):
         # Use the entitydefs passed into constructor, not

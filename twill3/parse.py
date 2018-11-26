@@ -2,19 +2,19 @@
 Code parsing and evaluation for the twill3 mini-language.
 """
 
+import re
 import sys
-from cStringIO import StringIO
+from io import StringIO
 
-from errors import TwillAssertionError, TwillNameError
-from pyparsing import OneOrMore, Word, printables, quotedString, Optional, \
-     alphas, alphanums, ParseException, ZeroOrMore, restOfLine, Combine, \
-     Literal, Group, removeQuotes, CharsNotIn
+from pyparsing import Word, printables, Optional, \
+    alphas, alphanums, ZeroOrMore, restOfLine, Combine, \
+    Literal, Group, removeQuotes, CharsNotIn
 
 import twill3.commands as commands
-import namespaces
-import re
+from . import namespaces
+from .errors import TwillAssertionError, TwillNameError
 
-### pyparsing stuff
+# pyparsing stuff
 
 # basically, a valid Python identifier:
 command = Word(alphas + "_", alphanums + "_")
@@ -31,9 +31,13 @@ _sglQuote = Literal("'")
 _dblQuote = Literal('"')
 _escapables = printables
 _escapedChar = Word(_bslash, _escapables, exact=2)
-dblQuotedString = Combine( _dblQuote + ZeroOrMore( CharsNotIn('\\"\n\r') | _escapedChar | '""' ) + _dblQuote ).streamline().setName("string enclosed in double quotes")
-sglQuotedString = Combine( _sglQuote + ZeroOrMore( CharsNotIn("\\'\n\r") | _escapedChar | "''" ) + _sglQuote ).streamline().setName("string enclosed in single quotes")
-quotedArg = ( dblQuotedString | sglQuotedString )
+dblQuotedString = Combine(
+    _dblQuote + ZeroOrMore(CharsNotIn('\\"\n\r') | _escapedChar | '""') + _dblQuote).streamline().setName(
+    "string enclosed in double quotes")
+sglQuotedString = Combine(
+    _sglQuote + ZeroOrMore(CharsNotIn("\\'\n\r") | _escapedChar | "''") + _sglQuote).streamline().setName(
+    "string enclosed in single quotes")
+quotedArg = (dblQuotedString | sglQuotedString)
 quotedArg.setParseAction(removeQuotes)
 quotedArg.setName("quotedArg")
 
@@ -51,16 +55,17 @@ comment = comment.suppress()
 comment.setName('comment')
 
 full_command = (
-    comment
-    | (command + arguments + Optional(comment))
-    )
+        comment
+        | (command + arguments + Optional(comment))
+)
 full_command.setName('full_command')
 
 ###
 
-command_list = []           # filled in by namespaces.init_global_dict().
+command_list = []  # filled in by namespaces.init_global_dict().
 
-### command/argument handling.
+
+# command/argument handling.
 
 def process_args(args, globals_dict, locals_dict):
     """
@@ -75,30 +80,30 @@ def process_args(args, globals_dict, locals_dict):
         if arg.startswith('__'):
             try:
                 val = eval(arg, globals_dict, locals_dict)
-            except NameError:           # not in dictionary; don't interpret.
+            except NameError:  # not in dictionary; don't interpret.
                 val = arg
 
+            print('*** VAL IS', val, 'FOR', arg)
 
-            print '*** VAL IS', val, 'FOR', arg
-            
-            if isinstance(val, str) or isinstance(val, unicode):
+            if isinstance(val, str) or isinstance(val, str):
                 newargs.append(val)
             else:
                 newargs.extend(val)
-                
+
         # $variable substitution
         elif arg.startswith('$') and not arg.startswith('${'):
             try:
                 val = eval(arg[1:], globals_dict, locals_dict)
-            except NameError:           # not in dictionary; don't interpret.
+            except NameError:  # not in dictionary; don't interpret.
                 val = arg
             newargs.append(val)
         else:
             newargs.append(variable_substitution(arg, globals_dict, locals_dict))
 
-    newargs = [ i.replace('\\n', '\n') for i in newargs ]
+    newargs = [i.replace('\\n', '\n') for i in newargs]
 
     return newargs
+
 
 ###
 
@@ -109,7 +114,7 @@ def execute_command(cmd, args, globals_dict, locals_dict, cmdinfo):
     Side effects: __args__ is set to the argument tuple, __cmd__ is set to
     the command.
     """
-    global command_list                 # all supported commands:
+    global command_list  # all supported commands:
     # execute command.
     locals_dict['__cmd__'] = cmd
     locals_dict['__args__'] = args
@@ -124,15 +129,17 @@ def execute_command(cmd, args, globals_dict, locals_dict, cmdinfo):
 
     # eval the codeobj in the appropriate dictionary.
     result = eval(codeobj, globals_dict, locals_dict)
-    
+
     # set __url__
     locals_dict['__url__'] = commands.browser.get_url()
 
     return result
 
+
 ###
 
 _print_commands = False
+
 
 def parse_command(line, globals_dict, locals_dict):
     """
@@ -141,12 +148,13 @@ def parse_command(line, globals_dict, locals_dict):
     res = full_command.parseString(line)
     if res:
         if _print_commands:
-            print>>commands.OUT, "twill3: executing cmd '%s'" % (line.strip(),)
-            
+            print("twill3: executing cmd '%s'" % (line.strip(),), file=commands.OUT)
+
         args = process_args(res.arguments.asList(), globals_dict, locals_dict)
         return (res.command, args)
 
-    return None, None                   # e.g. a comment
+    return None, None  # e.g. a comment
+
 
 ###
 
@@ -155,12 +163,13 @@ def execute_string(buf, **kw):
     Execute commands from a string buffer.
     """
     fp = StringIO(buf)
-    
+
     kw['source'] = ['<string buffer>']
-    if not kw.has_key('no_reset'):
-       kw['no_reset'] = True
-    
+    if 'no_reset' not in kw:
+        kw['no_reset'] = True
+
     _execute_script(fp, **kw)
+
 
 def execute_file(filename, **kw):
     """
@@ -175,7 +184,8 @@ def execute_file(filename, **kw):
     kw['source'] = filename
 
     _execute_script(inp, **kw)
-    
+
+
 def _execute_script(inp, **kw):
     """
     Execute lines taken from a file-like iterator.
@@ -183,7 +193,7 @@ def _execute_script(inp, **kw):
     # initialize new local dictionary & get global + current local
     namespaces.new_local_dict()
     globals_dict, locals_dict = namespaces.get_twill_glocals()
-    
+
     locals_dict['__url__'] = commands.browser.get_url()
 
     # reset browser
@@ -203,15 +213,15 @@ def _execute_script(inp, **kw):
 
     # sourceinfo stuff
     sourceinfo = kw.get('source', "<input>")
-    
+
     try:
 
         for n, line in enumerate(inp):
-            if not line.strip():            # skip empty lines
+            if not line.strip():  # skip empty lines
                 continue
 
             cmdinfo = "%s:%d" % (sourceinfo, n,)
-            print 'AT LINE:', cmdinfo
+            print('AT LINE:', cmdinfo)
 
             cmd, args = parse_command(line, globals_dict, locals_dict)
             if cmd is None:
@@ -222,31 +232,32 @@ def _execute_script(inp, **kw):
             except SystemExit:
                 # abort script execution, if a SystemExit is raised.
                 return
-            except TwillAssertionError, e:
-                print>>commands.ERR, '''\
+            except TwillAssertionError as e:
+                print('''\
 Oops!  Twill assertion error on line %d of '%s' while executing
 
   >> %s
 
 %s
-''' % (n, sourceinfo, line.strip(), e)
+''' % (n, sourceinfo, line.strip(), e), file=commands.ERR)
                 if not catch_errors:
                     raise
-            except Exception, e:
-                print>>commands.ERR, '''\
+            except Exception as e:
+                print('''\
 EXCEPTION raised at line %d of '%s'
 
       %s
 
 Error message: '%s'
 
-''' % (n, sourceinfo, line.strip(),str(e).strip(),)
+''' % (n, sourceinfo, line.strip(), str(e).strip(),), file=commands.ERR)
 
                 if not catch_errors:
                     raise
 
     finally:
         namespaces.pop_local_dict()
+
 
 ###
 
@@ -256,22 +267,22 @@ def debug_print_commands(flag):
     """
     global _print_commands
     _print_commands = bool(flag)
-        
+
 
 variable_expression = re.compile("\${(.*?)}")
 
+
 def variable_substitution(raw_str, globals_dict, locals_dict):
-    str=''
+    str = ''
     pos = 0
     for m in variable_expression.finditer(raw_str):
-        str = str+raw_str[pos:m.start()]
+        str = str + raw_str[pos:m.start()]
         try:
             str = str + eval(m.group(1), globals_dict, locals_dict)
         except NameError:
             str = str + m.group()
         pos = m.end()
 
-    str = str+raw_str[pos:]
+    str = str + raw_str[pos:]
 
     return str
-

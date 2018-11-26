@@ -37,7 +37,7 @@ def fv_match(formname, regexp, value):
     
     form = state.get_form(formname)
     if form is None:
-        print 'no such form', formname
+        print(('no such form', formname))
         return
 
     regexp = re.compile(regexp)
@@ -45,18 +45,18 @@ def fv_match(formname, regexp, value):
     matches = [ ctl for ctl in form.inputs if regexp.search(str(ctl.get("name"))) ]
 
     if matches:
-        print '-- matches %d' % (len(matches),)
+        print(('-- matches %d' % (len(matches),)))
 
         n = 0
         for control in matches:
             state.clicked(form, control)
-            if 'readonly' in control.attrib.keys():
+            if 'readonly' in list(control.attrib.keys()):
                 continue
 
             n += 1
             twill3.utils.set_form_control_value(control, value)
 
-        print 'set %d values total' % (n,)
+        print(('set %d values total' % (n,)))
 
 def fv_multi_match(formname, regexp, *values):
     """
@@ -70,7 +70,7 @@ def fv_multi_match(formname, regexp, *values):
     
     form = state.get_form(formname)
     if form is None:
-        print 'no such form', formname
+        print(('no such form', formname))
         return
 
     regexp = re.compile(regexp)
@@ -78,20 +78,20 @@ def fv_multi_match(formname, regexp, *values):
     matches = [ ctl for ctl in form.inputs if regexp.search(str(ctl.get("name"))) ]
 
     if matches:
-        print '-- matches %d, values %d' % (len(matches), len(values))
+        print(('-- matches %d, values %d' % (len(matches), len(values))))
 
         n = 0
         for control in matches:
             state.clicked(form, control)
-            if 'readonly' in control.attrib.keys():
+            if 'readonly' in list(control.attrib.keys()):
                 continue
             try:
                 twill3.utils.set_form_control_value(control, values[n])
-            except IndexError, e:
+            except IndexError as e:
                 twill3.utils.set_form_control_value(control, values[-1])
             n += 1
 
-        print 'set %d values total' % (n,)
+        print(('set %d values total' % (n,)))
 
 
 def fv_multi(formname, *pairs):

@@ -11,11 +11,10 @@ included with the distribution).
 
 """
 
-import re, base64, urlparse, posixpath, md5, sha, sys, copy
+import re, base64, urllib.parse, posixpath, md5, sha, sys, copy
 
-from urllib2 import BaseHandler
-from urllib import getproxies, unquote, splittype, splituser, splitpasswd, \
-     splitport
+from urllib.request import BaseHandler
+from urllib.parse import unquote, splittype, splituser, splitpasswd, splitport
 
 
 def _parse_proxy(proxy):
@@ -99,7 +98,7 @@ class ProxyHandler(BaseHandler):
             proxies = getproxies()
         assert hasattr(proxies, 'has_key'), "proxies must be a mapping"
         self.proxies = proxies
-        for type, url in proxies.items():
+        for type, url in list(proxies.items()):
             setattr(self, '%s_open' % type,
                     lambda r, proxy=url, type=type, meth=self.proxy_open: \
                     meth(r, proxy, type))
@@ -134,7 +133,7 @@ class HTTPPasswordMgr:
 
     def add_password(self, realm, uri, user, passwd):
         # uri could be a single URI or a sequence
-        if isinstance(uri, basestring):
+        if isinstance(uri, str):
             uri = [uri]
         if not realm in self.passwd:
             self.passwd[realm] = {}
@@ -147,7 +146,7 @@ class HTTPPasswordMgr:
         domains = self.passwd.get(realm, {})
         for default_port in True, False:
             reduced_authuri = self.reduce_uri(authuri, default_port)
-            for uris, authinfo in domains.iteritems():
+            for uris, authinfo in list(domains.items()):
                 for uri in uris:
                     if self.is_suburi(uri, reduced_authuri):
                         return authinfo
@@ -156,7 +155,7 @@ class HTTPPasswordMgr:
     def reduce_uri(self, uri, default_port=True):
         """Accept authority or URI and extract only the authority and path."""
         # note HTTP URLs do not have a userinfo component
-        parts = urlparse.urlsplit(uri)
+        parts = urllib.parse.urlsplit(uri)
         if parts[1]:
             # URI
             scheme = parts[0]
@@ -424,7 +423,7 @@ class HTTPDigestAuthHandler(BaseHandler, AbstractDigestAuthHandler):
     handler_order = 490
 
     def http_error_401(self, req, fp, code, msg, headers):
-        host = urlparse.urlparse(req.get_full_url())[1]
+        host = urllib.parse.urlparse(req.get_full_url())[1]
         retry = self.http_error_auth_reqed('www-authenticate',
                                            host, req, headers)
         self.reset_retry_count()
@@ -449,7 +448,7 @@ class HTTPProxyPasswordMgr(HTTPPasswordMgr):
     # has default realm and host/port
     def add_password(self, realm, uri, user, passwd):
         # uri could be a single URI or a sequence
-        if uri is None or isinstance(uri, basestring):
+        if uri is None or isinstance(uri, str):
             uris = [uri]
         else:
             uris = uri
@@ -468,7 +467,7 @@ class HTTPProxyPasswordMgr(HTTPPasswordMgr):
                 authinfo_by_domain = self.passwd.get(realm, {})
                 for default_port in True, False:
                     reduced_authuri = self.reduce_uri(authuri, default_port)
-                    for uri, authinfo in authinfo_by_domain.iteritems():
+                    for uri, authinfo in list(authinfo_by_domain.items()):
                         if uri is None and not default_uri:
                             continue
                         if self.is_suburi(uri, reduced_authuri):

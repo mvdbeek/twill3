@@ -2,11 +2,14 @@
 Support functionality for using twill3 in unit tests.
 """
 
-import sys, os, time
-from cStringIO import StringIO
+import os
+import sys
+import time
+from io import StringIO
 
 # package import
-from parse import execute_file
+from .parse import execute_file
+
 
 class TestInfo:
     """
@@ -17,7 +20,7 @@ class TestInfo:
     The optional sleep argument specifies how many seconds to wait for the
     server to set itself up.  Default is 0.
     """
-    
+
     def __init__(self, script, server_fn, port, sleep=0):
         self.script = script
         self.server_fn = server_fn
@@ -33,7 +36,7 @@ class TestInfo:
         # create new stdout/stderr
         self.stdout = sys.stdout = StringIO()
         self.stderr = sys.stderr = StringIO()
-        
+
         try:
             self.server_fn()
         finally:
@@ -49,8 +52,9 @@ class TestInfo:
         execute_file(self.script, initial_url=url)
 
     def get_url(self):
-        "Calculate the test server URL."
+        """Calculate the test server URL."""
         return "http://localhost:%d/" % (self.port,)
+
 
 #
 # run_test
@@ -70,17 +74,18 @@ def run_test(test_info):
     #
     # run twill3 test script.
     #
-    
+
     child_pid = pid
     try:
         test_info.run_script()
     finally:
         os.kill(child_pid, 9)
 
+
 #
 # run_child_process
 #
-        
+
 def run_child_process(test_info):
     """
     Run a Web server in a child process.

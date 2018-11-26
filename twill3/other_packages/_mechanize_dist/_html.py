@@ -8,12 +8,12 @@ included with the distribution).
 
 """
 
-import re, copy, htmlentitydefs
-import sgmllib, HTMLParser, ClientForm
+import re, copy, html.entities
+import sgmllib, html.parser, ClientForm
 
-import _request
-from _headersutil import split_header_words, is_html as _is_html
-import _rfc3986
+from . import _request
+from ._headersutil import split_header_words, is_html as _is_html
+from . import _rfc3986
 
 DEFAULT_ENCODING = "latin-1"
 
@@ -108,7 +108,7 @@ class LinksFactory:
                  link_class=Link,
                  urltags=None,
                  ):
-        import _pullparser
+        from . import _pullparser
         if link_parser_class is None:
             link_parser_class = _pullparser.TolerantPullParser
         self.link_parser_class = link_parser_class
@@ -137,7 +137,7 @@ class LinksFactory:
         p = self.link_parser_class(response, encoding=encoding)
 
         try:
-            for token in p.tags(*(self.urltags.keys()+["base"])):
+            for token in p.tags(*(list(self.urltags.keys())+["base"])):
                 if token.type == "endtag":
                     continue
                 if token.data == "base":
@@ -169,7 +169,7 @@ class LinksFactory:
                     #text = p.get_compressed_text()
 
                 yield Link(base_url, url, text, tag, token.attrs)
-        except sgmllib.SGMLParseError, exc:
+        except sgmllib.SGMLParseError as exc:
             raise ParseError(exc)
 
 class FormsFactory:
@@ -190,7 +190,7 @@ class FormsFactory:
                  request_class=None,
                  backwards_compat=False,
                  ):
-        import ClientForm
+        from . import ClientForm
         self.select_default = select_default
         if form_parser_class is None:
             form_parser_class = ClientForm.FormParser
@@ -209,7 +209,7 @@ class FormsFactory:
         self.global_form = None
 
     def forms(self):
-        import ClientForm
+        from . import ClientForm
         encoding = self.encoding
         try:
             forms = ClientForm.ParseResponseEx(
@@ -222,7 +222,7 @@ class FormsFactory:
                 _urlparse=_rfc3986.urlsplit,
                 _urlunparse=_rfc3986.urlunsplit,
                 )
-        except ClientForm.ParseError, exc:
+        except ClientForm.ParseError as exc:
             raise ParseError(exc)
         self.global_form = forms[0]
         return forms[1:]
@@ -236,7 +236,7 @@ class TitleFactory:
         self._encoding = encoding
 
     def title(self):
-        import _pullparser
+        from . import _pullparser
         p = _pullparser.TolerantPullParser(
             self._response, encoding=self._encoding)
         try:
@@ -246,7 +246,7 @@ class TitleFactory:
                 return None
             else:
                 return p.get_text()
-        except sgmllib.SGMLParseError, exc:
+        except sgmllib.SGMLParseError as exc:
             raise ParseError(exc)
 
 
@@ -261,7 +261,7 @@ def unescape(data, entities, encoding):
 
         repl = entities.get(ent[1:-1])
         if repl is not None:
-            repl = unichr(repl)
+            repl = chr(repl)
             if type(repl) != type(""):
                 try:
                     repl = repl.encode(encoding)
@@ -277,7 +277,7 @@ def unescape_charref(data, encoding):
     name, base = data, 10
     if name.startswith("x"):
         name, base= name[1:], 16
-    uc = unichr(int(name, base))
+    uc = chr(int(name, base))
     if encoding is None:
         return uc
     else:
@@ -289,8 +289,8 @@ def unescape_charref(data, encoding):
 
 
 # bizarre import gymnastics for bundled BeautifulSoup
-import _beautifulsoup
-import ClientForm
+from . import _beautifulsoup
+from . import ClientForm
 RobustFormParser, NestingRobustFormParser = ClientForm._create_bs_classes(
     _beautifulsoup.BeautifulSoup, _beautifulsoup.ICantBelieveItsBeautifulSoup
     )
@@ -299,12 +299,12 @@ import sgmllib
 sgmllib.charref = re.compile("&#(x?[0-9a-fA-F]+)[^0-9a-fA-F]")
 
 class MechanizeBs(_beautifulsoup.BeautifulSoup):
-    _entitydefs = htmlentitydefs.name2codepoint
+    _entitydefs = html.entities.name2codepoint
     # don't want the magic Microsoft-char workaround
     PARSER_MASSAGE = [(re.compile('(<[^<>]*)/>'),
-                       lambda(x):x.group(1) + ' />'),
+                       lambda x:x.group(1) + ' />'),
                       (re.compile('<!\s+([^<>]*)>'),
-                       lambda(x):'<!' + x.group(1) + '>')
+                       lambda x:'<!' + x.group(1) + '>')
                       ]
 
     def __init__(self, encoding, text=None, avoidParserProblems=True,
@@ -335,7 +335,7 @@ class RobustLinksFactory:
                  link_class=Link,
                  urltags=None,
                  ):
-        import _beautifulsoup
+        from . import _beautifulsoup
         if link_parser_class is None:
             link_parser_class = MechanizeBs
         self.link_parser_class = link_parser_class
@@ -358,14 +358,14 @@ class RobustLinksFactory:
         self._encoding = encoding
 
     def links(self):
-        import _beautifulsoup
+        from . import _beautifulsoup
         bs = self._bs
         base_url = self._base_url
         encoding = self._encoding
         gen = bs.recursiveChildGenerator()
         for ch in bs.recursiveChildGenerator():
             if (isinstance(ch, _beautifulsoup.Tag) and
-                ch.name in self.urltags.keys()+["base"]):
+                ch.name in list(self.urltags.keys())+["base"]):
                 link = ch
                 attrs = bs.unescape_attrs(link.attrs)
                 attrs_dict = dict(attrs)
@@ -393,7 +393,7 @@ class RobustLinksFactory:
 
 class RobustFormsFactory(FormsFactory):
     def __init__(self, *args, **kwds):
-        import ClientForm
+        from . import ClientForm
         args = form_parser_args(*args, **kwds)
         if args.form_parser_class is None:
             args.form_parser_class = RobustFormParser
@@ -413,7 +413,7 @@ class RobustTitleFactory:
         self._encoding = encoding
 
     def title(self):
-        import _beautifulsoup
+        from . import _beautifulsoup
         title = self._bs.first("title")
         if title == _beautifulsoup.Null:
             return None
@@ -595,7 +595,7 @@ class RobustFactory(Factory):
         self._soup_class = soup_class
 
     def set_response(self, response):
-        import _beautifulsoup
+        from . import _beautifulsoup
         Factory.set_response(self, response)
         if response is not None:
             data = response.read()

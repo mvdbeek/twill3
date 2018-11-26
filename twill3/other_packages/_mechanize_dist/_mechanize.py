@@ -9,14 +9,14 @@ included with the distribution).
 
 """
 
-import urllib2, sys, copy, re, os, urllib
+import urllib.request, urllib.error, urllib.parse, sys, copy, re, os, urllib.request, urllib.parse, urllib.error
 
 
-from _useragent import UserAgentBase
-from _html import DefaultFactory
-import _response
-import _request
-import _rfc3986
+from ._useragent import UserAgentBase
+from ._html import DefaultFactory
+from . import _response
+from . import _request
+from . import _rfc3986
 
 __version__ = (0, 1, 8, "b", None)  # 0.1.8b
 
@@ -26,7 +26,7 @@ class FormNotFoundError(Exception): pass
 
 
 def sanepathname2url(path):
-    urlpath = urllib.pathname2url(path)
+    urlpath = urllib.request.pathname2url(path)
     if os.name == "nt" and urlpath.startswith("///"):
         urlpath = urlpath[2:]
     # XXX don't ask me about the mac...
@@ -61,7 +61,7 @@ class History:
         del self._history[:]
 
 
-class HTTPRefererProcessor(urllib2.BaseHandler):
+class HTTPRefererProcessor(urllib.request.BaseHandler):
     def http_request(self, request):
         # See RFC 2616 14.36.  The only times we know the source of the
         # request URI has a URI associated with it are redirect, and
@@ -127,10 +127,10 @@ class Browser(UserAgentBase):
         self._history = history
 
         if request_class is None:
-            if not hasattr(urllib2.Request, "add_unredirected_header"):
+            if not hasattr(urllib.request.Request, "add_unredirected_header"):
                 request_class = _request.Request
             else:
-                request_class = urllib2.Request  # Python >= 2.4
+                request_class = urllib.request.Request  # Python >= 2.4
 
         if factory is None:
             factory = DefaultFactory()
@@ -236,7 +236,7 @@ class Browser(UserAgentBase):
         success = True
         try:
             response = UserAgentBase.open(self, request, data)
-        except urllib2.HTTPError, error:
+        except urllib.error.HTTPError as error:
             success = False
             if error.fp is None:  # not a response
                 raise
@@ -623,7 +623,7 @@ class Browser(UserAgentBase):
 
         """
         try:
-            return self._filter_links(self._factory.links(), **kwds).next()
+            return next(self._filter_links(self._factory.links(), **kwds))
         except StopIteration:
             raise LinkNotFoundError()
 

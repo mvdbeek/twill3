@@ -2,22 +2,27 @@
 Implements TwillBrowser
 """
 
-OUT=None
 
 # Python imports
 import pickle
 import re
-import urlparse
+import urllib.parse
 
 # Dependencies
 import requests
 from lxml import html
 from requests.exceptions import InvalidSchema, ConnectionError
-from utils import print_form, unique_match, _follow_equiv_refresh, ResultWrapper
-from errors import TwillException
+from .utils import print_form, unique_match, _follow_equiv_refresh, ResultWrapper
+from .errors import TwillException
+
+OUT = None
+
 
 class TwillBrowser(object):
-    """A simple, stateful browser"""
+    """
+    A simple, stateful browser
+    """
+
     def __init__(self):
         #
         # create special link/forms parsing code to run tidy on HTML first.
@@ -27,7 +32,7 @@ class TwillBrowser(object):
         # Taken from
         # https://code.google.com/p/wsgi-intercept/issues/detail?id=23
         # with slight modification
-        import wsgi_intercept
+        from . import wsgi_intercept
         from requests.packages.urllib3 import connectionpool as cpl
         cpl.HTTPConnectionPool.old_http = cpl.HTTPConnectionPool.ConnectionCls
         cpl.HTTPConnectionPool.ConnectionCls = wsgi_intercept.WSGI_HTTPConnection
@@ -38,7 +43,7 @@ class TwillBrowser(object):
 
         # Session stores cookies
         self._session = requests.Session()
-        self._session.headers.update({"Accept" : "text/html; */*"})
+        self._session.headers.update({"Accept": "text/html; */*"})
 
         # An lxml FormElement, none until a form is selected
         # replaces self._browser.form from mechanize
@@ -73,8 +78,8 @@ class TwillBrowser(object):
 
         # if this is a '?' or '/' URL, then assume that we want to tack it onto
         # the end of the current URL.
-        try_urls.append(urlparse.urljoin(self.get_url(), url))
-        
+        try_urls.append(urllib.parse.urljoin(self.get_url(), url))
+
         success = False
         for u in try_urls:
             try:
@@ -86,7 +91,7 @@ class TwillBrowser(object):
                 pass
 
         if success:
-            print>>OUT, '==> at', self.get_url()
+            print('==> at', self.get_url(), file=OUT)
         else:
             raise TwillException("cannot go to '%s'" % (url,))
 
@@ -95,7 +100,7 @@ class TwillBrowser(object):
         Tell the browser to reload the current page.
         """
         self._journey('reload')
-        print>>OUT, '==> reloaded'
+        print('==> reloaded', file=OUT)
 
     def back(self):
         """
@@ -103,9 +108,9 @@ class TwillBrowser(object):
         """
         try:
             self._journey('back')
-            print>>OUT, '==> back to', self.get_url()
+            print('==> back to', self.get_url(), file=OUT)
         except TwillException:
-            print>>OUT, '==> back at empty page.'
+            print('==> back at empty page.', file=OUT)
 
     def get_code(self):
         """
@@ -150,13 +155,13 @@ class TwillBrowser(object):
         Follow the given link.
         """
         self._journey('follow_link', link)
-        print>>OUT, '==> at', self.get_url()
+        print('==> at', self.get_url(), file=OUT)
 
     def set_agent_string(self, agent):
         """
         Set the agent string to the given value.
         """
-        self._session.headers.update({'User-agent' : agent})
+        self._session.headers.update({'User-agent': agent})
         return
 
     def showforms(self):
@@ -173,21 +178,21 @@ class TwillBrowser(object):
         Pretty-print all of the links.
         """
         links = self.get_all_links()
-        for n,link in enumerate(links):
-            print>>OUT, "%d. %s ==> %s" % (n, link[0], link[1],)
-        print>>OUT, ''
+        for n, link in enumerate(links):
+            print("%d. %s ==> %s" % (n, link[0], link[1],), file=OUT)
+        print('', file=OUT)
 
     def showhistory(self):
         """
         Pretty-print the history of links visited.
         """
-        print>>OUT, ''
-        print>>OUT, 'History: (%d pages total) ' % (len(self._history))
+        print('', file=OUT)
+        print('History: (%d pages total) ' % (len(self._history)), file=OUT)
         n = 1
         for page in self._history:
-            print>>OUT, "\t%d. %s" % (n, page.get_url())
+            print("\t%d. %s" % (n, page.get_url()), file=OUT)
             n += 1
-        print>>OUT, ''
+        print('', file=OUT)
 
     def get_all_links(self):
         """
@@ -214,40 +219,40 @@ class TwillBrowser(object):
             return self.result.get_form(formname)
         return None
 
-
     def get_form_field(self, form, fieldname):
         """
         Return the control that matches 'fieldname'.  Must be
         a *unique* regexp/exact string match.
         """
-        if fieldname in form.fields.keys():
-            controls = [f for f in form.inputs if f.get("name") == fieldname \
-                        and hasattr(f, 'type') and f.type == 'checkbox']
+        if fieldname in list(form.fields.keys()):
+            controls = [
+                f for f in form.inputs if f.get("name") == fieldname and hasattr(f, 'type') and f.type == 'checkbox'
+            ]
             if len(controls) > 1:
                 return html.CheckboxGroup(controls)
 
         fieldname = str(fieldname)
-        
+
         found = None
         found_multiple = False
 
-        matches = [ c for c in form.inputs if c.get("id") == fieldname ]
+        matches = [c for c in form.inputs if c.get("id") == fieldname]
 
         # test exact match.
         if matches:
             if unique_match(matches):
                 found = matches[0]
             else:
-                found_multiple = True   # record for error reporting.
-        
-        matches = [ c for c in form.inputs if str(c.name) == fieldname ]
+                found_multiple = True  # record for error reporting.
+
+        matches = [c for c in form.inputs if str(c.name) == fieldname]
 
         # test exact match.
         if matches:
             if unique_match(matches):
                 found = matches[0]
             else:
-                found_multiple = True   # record for error reporting.
+                found_multiple = True  # record for error reporting.
 
         # test index.
         if found is None:
@@ -256,38 +261,38 @@ class TwillBrowser(object):
             try:
                 fieldnum = int(fieldname) - 1
                 found = clickies[fieldnum]
-            except ValueError:          # int() failed
+            except ValueError:  # int() failed
                 pass
-            except IndexError:          # fieldnum was incorrect
+            except IndexError:  # fieldnum was incorrect
                 pass
 
         # test regexp match
         if found is None:
             regexp = re.compile(fieldname)
 
-            matches = [ ctl for ctl in form.inputs \
-                        if regexp.search(str(ctl.get("name"))) ]
+            matches = [ctl for ctl in form.inputs \
+                       if regexp.search(str(ctl.get("name")))]
 
             if matches:
                 if unique_match(matches):
                     found = matches[0]
                 else:
-                    found_multiple = True # record for error
+                    found_multiple = True  # record for error
 
         if found is None:
-            clickies = [ c for c in form.inputs if c.value == fieldname]
+            clickies = [c for c in form.inputs if c.value == fieldname]
             if clickies:
                 if len(clickies) == 1:
                     found = clickies[0]
                 else:
-                    found_multiple = True   # record for error
+                    found_multiple = True  # record for error
 
         # error out?
         if found is None:
             if not found_multiple:
-                raise TwillException('no field matches "%s"' % (fieldname,))
+                raise TwillException("no field matches '%s'" % (fieldname,))
             else:
-                raise TwillException('multiple matches to "%s"' % (fieldname,))
+                raise TwillException("multiple matches to '%s'" % (fieldname,))
 
         return found
 
@@ -303,7 +308,7 @@ class TwillBrowser(object):
             self.last_submit_button = None
         # record the last submit button clicked.
         if hasattr(control, 'type') and \
-            (control.type == 'submit' or control.type == 'image'):
+                (control.type == 'submit' or control.type == 'image'):
             self.last_submit_button = control
 
     def submit(self, fieldname=None):
@@ -312,21 +317,19 @@ class TwillBrowser(object):
         """
         if fieldname is not None:
             fieldname = str(fieldname)
-        
+
         if len(self.get_all_forms()) == 0:
             raise TwillException("no forms on this page!")
-        
+
         ctl = None
-        
+
         form = self._form
         if form is None:
-            forms = [ i for i in self.get_all_forms() ]
+            forms = [i for i in self.get_all_forms()]
             if len(forms) == 1:
                 form = forms[0]
             else:
-                raise TwillException("""\
-more than one form; you must select one (use 'fv') before submitting\
-""")
+                raise TwillException('more than one form; you must select one (use fv) before submitting')
         if form.action is None:
             form.action = self.get_url()
 
@@ -336,11 +339,11 @@ more than one form; you must select one (use 'fv') before submitting\
                 ctl = self.last_submit_button
             else:
                 # get first submit button in form.
-                submits = [ c for c in form.inputs 
-                            if hasattr(c, 'type') and (c.type == 'submit' 
-                            or c.type == 'image')]
+                submits = [c for c in form.inputs
+                           if hasattr(c, 'type') and (c.type == 'submit'
+                                                      or c.type == 'image')]
                 if len(submits) != 0:
-                    ctl = submits[0]             
+                    ctl = submits[0]
         else:
             # fieldname given; find it.
             ctl = self.get_form_field(form, fieldname)
@@ -351,21 +354,19 @@ more than one form; you must select one (use 'fv') before submitting\
         #
         if ctl is not None:
             # submit w/button
-            print>>OUT, """\
-Note: submit is using submit button: name="%s", value="%s"
-""" % (ctl.get("name"), ctl.value)
-            
+            print("Note: submit is using submit button: name='%s', value='%s'" % (ctl.get("name"), ctl.value), file=OUT)
+
             if hasattr(ctl, 'type') and ctl.type == 'image':
                 pass
-            
-                
+
+
         else:
             # submit w/o submit button.
             pass
 
         # @BRT: For now, the referrer is always the current page
         # @CTB this seems like an issue for further work.
-        headers = {'referer' : self.get_url()}
+        headers = {'referer': self.get_url()}
 
         #
         # add referer information.  this may require upgrading the
@@ -377,21 +378,21 @@ Note: submit is using submit button: name="%s", value="%s"
         #
         payload = list(form.form_values())
         if ctl is not None and ctl.get("name") is not None:
-            payload.append( (ctl.get("name"), ctl.value) )
+            payload.append((ctl.get("name"), ctl.value))
         if form.method == 'POST':
             if len(self._formFiles) != 0:
                 r = self._session.post(
-                                        form.action, 
-                                        data=payload, 
-                                        files=self._formFiles, 
-                                        headers=headers
-                                      )
+                    form.action,
+                    data=payload,
+                    files=self._formFiles,
+                    headers=headers
+                )
             else:
                 r = self._session.post(
-                                        form.action, 
-                                        data=payload, 
-                                        headers=headers
-                                      )
+                    form.action,
+                    data=payload,
+                    headers=headers
+                )
         else:
             r = self._session.get(form.action, data=payload, headers=headers)
 
@@ -424,13 +425,13 @@ Note: submit is using submit button: name="%s", value="%s"
         Pretty-print all of the cookies.
         """
         c = requests.utils.dict_from_cookiejar(self._session.cookies)
-        print>>OUT, 'There are %d cookie(s) in the cookiejar.\n' % (len(c))
-        
+        print('There are %d cookie(s) in the cookiejar.\n' % (len(c)), file=OUT)
+
         if len(self._session.cookies):
             for cookie in self._session.cookies:
-                print>>OUT, '\t', cookie
+                print('\t', cookie, file=OUT)
 
-            print>>OUT, ''
+            print('', file=OUT)
 
     # BRT: Added to test for meta redirection
     #       Shamelessly stolen from 
@@ -444,19 +445,19 @@ Note: submit is using submit button: name="%s", value="%s"
         """
         html_tree = html.fromstring(r.text)
         attr = html_tree.xpath(
-        "//meta[translate(@http-equiv, 'REFSH', 'refsh') = 'refresh']/@content"
-                )
+            "//meta[translate(@http-equiv, 'REFSH', 'refsh') = 'refresh']/@content"
+        )
         if len(attr) > 0:
             wait, text = attr[0].split(";")
             # @BRT: Strip surrounding quotes and ws; less brute force method?
             #       Other chars that need to be dealt with?
             text = text.strip()
-            text = text.strip('\'"')
+            text = text.strip('\'')
             if text.lower().startswith("url="):
                 url = text[4:]
                 if not url.startswith('http'):
                     # Relative URL, adapt
-                    url = urlparse.urljoin(r.url, url)
+                    url = urllib.parse.urljoin(r.url, url)
                     return True, url
         return False, None
 
@@ -492,7 +493,7 @@ Note: submit is using submit button: name="%s", value="%s"
             # Try to find the link first
             url = self.find_link(args[0])
             if url.find('://') == -1:
-                url = urlparse.urljoin(self.get_url(), url)
+                url = urllib.parse.urljoin(self.get_url(), url)
 
         elif func_name == 'reload':
             url = self.get_url()
@@ -504,12 +505,12 @@ Note: submit is using submit button: name="%s", value="%s"
             except IndexError:
                 raise TwillException
 
-        if url in self._auth.keys():
+        if url in list(self._auth.keys()):
             auth = self._auth[url]
         else:
             auth = None
 
-        r = self._session.get(url, auth = auth)
+        r = self._session.get(url, auth=auth)
 
         if _follow_equiv_refresh():
             r = self._follow_redirections(r, self._session)

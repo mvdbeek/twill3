@@ -13,13 +13,15 @@ import subprocess
 from lxml import etree, html, cssselect
 import re
 
-from errors import TwillException
+from .errors import TwillException
+
 
 class ResultWrapper(object):
     """
     Deal with mechanize/urllib2/whatever results, and present them in a
     unified form.  Returned by 'journey'-wrapped functions.
     """
+
     def __init__(self, req):
         self.req = req
         self.lxml = html.fromstring(self.req.text)
@@ -57,18 +59,19 @@ class ResultWrapper(object):
     def get_links(self):
         selector = cssselect.CSSSelector("a")
         return [
-                 # (stringify_children(l) or '', l.get("href")) 
-                 (l.text or '', l.get("href"))
-                 for l in selector(self.lxml)
-               ]
+            # (stringify_children(l) or '', l.get("href"))
+            (l.text or '', l.get("href"))
+            for l in selector(self.lxml)
+        ]
+
     def find_link(self, pattern):
         selector = cssselect.CSSSelector("a")
 
         links = [
-                 # (stringify_children(l) or '', l.get("href")) 
-                 (l.text or '', l.get("href"))
-                 for l in selector(self.lxml)
-                ]
+            # (stringify_children(l) or '', l.get("href"))
+            (l.text or '', l.get("href"))
+            for l in selector(self.lxml)
+        ]
         for link in links:
             if re.search(pattern, link[0]) or re.search(pattern, link[1]):
                 return link[1]
@@ -82,7 +85,7 @@ class ResultWrapper(object):
             id = f.get("id")
             if id and str(id) == formname:
                 return f
-        
+
         # next try regexps
         regexp = re.compile(formname)
         for f in forms:
@@ -94,8 +97,9 @@ class ResultWrapper(object):
             formnum = int(formname)
             if formnum >= 0 and formnum <= len(forms):
                 return forms[formnum - 1]
-        except (ValueError, IndexError):              # int() failed
+        except (ValueError, IndexError):  # int() failed
             return None
+
 
 def trunc(s, length):
     """
@@ -104,28 +108,29 @@ def trunc(s, length):
     """
     if not s:
         return ''
-    
+
     if len(s) > length:
-        return s[:length-4] + ' ...'
-    
+        return s[:length - 4] + ' ...'
+
     return s
+
 
 def print_form(n, f, OUT):
     """
     Pretty-print the given form, assigned # n.
     """
     if f.get('name'):
-         print>>OUT, '\nForm name=%s (#%d)' % (f.get('name'), n + 1)
+        print('\nForm name=%s (#%d)' % (f.get('name'), n + 1), file=OUT)
     else:
-        print>>OUT, '\nForm #%d' % (n + 1,)
+        print('\nForm #%d' % (n + 1,), file=OUT)
 
     if f.inputs is not None:
-        print>>OUT, "## ## __Name__________________ __Type___ __ID________ __Value__________________"
+        print("## ## __Name__________________ __Type___ __ID________ __Value__________________", file=OUT)
 
     for n, field in enumerate(f.inputs):
         if hasattr(field, 'value_options'):
-            items = [ i.name if hasattr(i, 'name') else i 
-                        for i in field.value_options ]
+            items = [i.name if hasattr(i, 'name') else i
+                     for i in field.value_options]
             value_displayed = "%s of %s" % ([i for i in field.value], items)
         else:
             value_displayed = "%s" % (field.value,)
@@ -134,16 +139,17 @@ def print_form(n, f, OUT):
         strings = ("%-2s" % (n + 1,),
                    submit_index,
                    "%-24s %-9s" % (trunc(str(field.name), 24),
-                                   trunc(field.type 
-                                   if hasattr(field, 'type') else 'select', 9)),
-                    "%-12s" % (trunc(field.get("id") or "(None)", 12),),
+                                   trunc(field.type
+                                         if hasattr(field, 'type') else 'select', 9)),
+                   "%-12s" % (trunc(field.get("id") or "(None)", 12),),
                    trunc(value_displayed, 40),
                    )
         for s in strings:
-            print>>OUT, s,
-        print>>OUT, ''
+            print(s, end=' ', file=OUT)
+        print('', file=OUT)
 
-    print ''
+    print('')
+
 
 def make_boolean(value):
     """
@@ -192,6 +198,7 @@ def make_boolean(value):
 
     raise TwillException("unable to convert '%s' into true/false" % (value,))
 
+
 def set_form_control_value(control, val):
     """
     Helper function to deal with setting form values on checkboxes, lists etc.
@@ -206,7 +213,7 @@ def set_form_control_value(control, val):
             # if there's more than one checkbox, use the behaviour for
             # ClientForm.ListControl, below.
             pass
-            
+
     elif isinstance(control, html.CheckboxGroup):
         if val.startswith('-'):
             val = val[1:]
@@ -243,8 +250,8 @@ def set_form_control_value(control, val):
 
         options = [i.strip() for i in control.value_options]
         optionNames = [i.text.strip() for i in control.getchildren()]
-        fullOptions = dict(zip(optionNames, options))
-        for k,v in fullOptions.iteritems():
+        fullOptions = dict(list(zip(optionNames, options)))
+        for k, v in fullOptions.items():
             if (val == k or val == v) and flag:
                 if hasattr(control, 'checkable') and control.checkable:
                     control.checked = flag
@@ -257,13 +264,14 @@ def set_form_control_value(control, val):
                 except ValueError:
                     pass
                 return
-        raise(TwillException("Attempt to set invalid value"))
-        
+        raise TwillException
+
     else:
-        if(hasattr(control, 'type') and control.type != 'submit'):
+        if (hasattr(control, 'type') and control.type != 'submit'):
             control.value = val
-        #else:
-            #raise(TwillException("Attempt to set value on invalid control"))
+        # else:
+        # raise(TwillException("Attempt to set value on invalid control"))
+
 
 def _all_the_same_submit(matches):
     """
@@ -280,9 +288,10 @@ def _all_the_same_submit(matches):
             name = match.name
             value = match.value
         else:
-            if match.name != name or match.value!= value:
+            if match.name != name or match.value != value:
                 return False
     return True
+
 
 def _all_the_same_checkbox(matches):
     """
@@ -305,10 +314,12 @@ def _all_the_same_checkbox(matches):
                 return False
     return True
 
+
 def unique_match(matches):
     return len(matches) == 1 or \
            _all_the_same_checkbox(matches) or \
            _all_the_same_submit(matches)
+
 
 #
 # stuff to run 'tidy'...
@@ -316,6 +327,7 @@ def unique_match(matches):
 
 _tidy_cmd = ["tidy", "-q", "-ashtml"]
 _tidy_exists = True
+
 
 def run_tidy(html):
     """
@@ -326,18 +338,18 @@ def run_tidy(html):
     """
     global _tidy_cmd, _tidy_exists
 
-    from commands import _options
+    from .commands import _options
     require_tidy = _options.get('require_tidy')
 
     if not _tidy_exists:
         if require_tidy:
             raise TwillException("tidy does not exist and require_tidy is set")
         return (None, None)
-    
+
     #
     # run the command, if we think it exists
     #
-    
+
     clean_html = None
     if _tidy_exists:
         try:
@@ -345,7 +357,7 @@ def run_tidy(html):
                                        stdout=subprocess.PIPE,
                                        stderr=subprocess.PIPE, bufsize=0,
                                        shell=False)
-        
+
             (stdout, stderr) = process.communicate(html)
 
             clean_html = stdout
@@ -363,10 +375,12 @@ def run_tidy(html):
 def _is_valid_filename(f):
     return not (f.endswith('~') or f.endswith('.bak') or f.endswith('.old'))
 
+
 # Added so browser can ask whether to follow meta redirects
 def _follow_equiv_refresh():
     from twill3.commands import _options
     return _options.get('acknowledge_equiv_refresh')
+
 
 def gather_filenames(arglist):
     """
@@ -378,13 +392,13 @@ def gather_filenames(arglist):
         if os.path.isdir(filename):
             thislist = []
             for (dirpath, dirnames, filenames) in os.walk(filename):
-                if '.svn' in dirpath:   # ignore subversion files
+                if '.svn' in dirpath:  # ignore subversion files
                     continue
                 for f in filenames:
                     if _is_valid_filename(f):
                         f = os.path.join(dirpath, f)
                         thislist.append(f)
-                        
+
             thislist.sort()
             l.extend(thislist)
         else:

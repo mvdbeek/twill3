@@ -1,13 +1,9 @@
-# urllib2 work-alike interface
-# ...from urllib2...
-from urllib2 import \
-     URLError, \
-     HTTPError
+from urllib.error import URLError, HTTPError
 # ...and from mechanize
-from _opener import OpenerDirector, \
+from ._opener import OpenerDirector, \
      SeekableResponseOpener, \
      build_opener, install_opener, urlopen
-from _auth import \
+from ._auth import \
      HTTPPasswordMgr, \
      HTTPPasswordMgrWithDefaultRealm, \
      AbstractBasicAuthHandler, \
@@ -19,21 +15,13 @@ from _auth import \
      HTTPBasicAuthHandler, \
      HTTPDigestAuthHandler, \
      HTTPSClientCertMgr
-from _request import \
+from ._request import \
      Request
-from _http import \
+from ._http import \
      RobotExclusionError
-
-# handlers...
-# ...from urllib2...
-from urllib2 import \
-     BaseHandler, \
-     UnknownHandler, \
-     FTPHandler, \
-     CacheFTPHandler, \
-     FileHandler
+from urllib.request import BaseHandler, UnknownHandler, FTPHandler, CacheFTPHandler, FileHandler
 # ...and from mechanize
-from _http import \
+from ._http import \
      HTTPHandler, \
      HTTPDefaultErrorHandler, \
      HTTPRedirectHandler, \
@@ -43,18 +31,18 @@ from _http import \
      HTTPRefreshProcessor, \
      HTTPErrorProcessor, \
      HTTPRobotRulesProcessor
-from _upgrade import \
+from ._upgrade import \
      HTTPRequestUpgradeProcessor, \
      ResponseUpgradeProcessor
-from _debug import \
+from ._debug import \
      HTTPResponseDebugProcessor, \
      HTTPRedirectDebugProcessor
-from _seek import \
+from ._seek import \
      SeekableProcessor
 # crap ATM
 ## from _gzip import \
 ##      HTTPGzipProcessor
-import httplib
+import http.client
 if hasattr(httplib, 'HTTPS'):
-    from _http import HTTPSHandler
+    from ._http import HTTPSHandler
 del httplib

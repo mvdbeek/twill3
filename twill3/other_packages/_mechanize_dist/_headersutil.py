@@ -9,13 +9,16 @@ COPYING.txt included with the distribution).
 
 """
 
-import os, re
+import os
+import re
 from types import StringType
 from types import UnicodeType
+
+from . import _rfc3986
+from ._util import http2time
+
 STRING_TYPES = StringType, UnicodeType
 
-from _util import http2time
-import _rfc3986
 
 def is_html(ct_headers, url, allow_xhtml=False):
     """
@@ -37,18 +40,22 @@ def is_html(ct_headers, url, allow_xhtml=False):
         html_types += [
             "text/xhtml", "text/xml",
             "application/xml", "application/xhtml+xml",
-            ]
+        ]
     return ct in html_types
+
 
 def unmatched(match):
     """Return unmatched part of re.Match object."""
     start, end = match.span(0)
-    return match.string[:start]+match.string[end:]
+    return match.string[:start] + match.string[end:]
 
-token_re =        re.compile(r"^\s*([^=\s;,]+)")
+
+token_re = re.compile(r"^\s*([^=\s;,]+)")
 quoted_value_re = re.compile(r"^\s*=\s*\"([^\"\\]*(?:\\.[^\"\\]*)*)\"")
-value_re =        re.compile(r"^\s*=\s*([^\s;,]*)")
+value_re = re.compile(r"^\s*=\s*([^\s;,]*)")
 escape_re = re.compile(r"\\(.)")
+
+
 def split_header_words(header_values):
     r"""Parse header values into a list of lists containing key,value pairs.
 
@@ -128,13 +135,16 @@ def split_header_words(header_values):
                 # skip junk
                 non_junk, nr_junk_chars = re.subn("^[=\s;]*", "", text)
                 assert nr_junk_chars > 0, (
-                    "split_header_words bug: '%s', '%s', %s" %
-                    (orig_text, text, pairs))
+                        "split_header_words bug: '%s', '%s', %s" %
+                        (orig_text, text, pairs))
                 text = non_junk
         if pairs: result.append(pairs)
     return result
 
+
 join_escape_re = re.compile(r"([\"\\])")
+
+
 def join_header_words(lists):
     """Do the inverse of the conversion done by split_header_words.
 
@@ -162,6 +172,7 @@ def join_header_words(lists):
             attr.append(k)
         if attr: headers.append("; ".join(attr))
     return ", ".join(headers)
+
 
 def parse_ns_headers(ns_headers):
     """Ad-hoc parser for Netscape protocol cookie-attributes.
@@ -219,8 +230,9 @@ def parse_ns_headers(ns_headers):
 
 
 def _test():
-   import doctest, _headersutil
-   return doctest.testmod(_headersutil)
+    import doctest, _headersutil
+    return doctest.testmod(_headersutil)
+
 
 if __name__ == "__main__":
-   _test()
+    _test()

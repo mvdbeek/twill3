@@ -12,18 +12,21 @@ COPYING.txt included with the distribution).
 
 """
 
-import copy, time, tempfile, htmlentitydefs, re, logging, socket, \
-       urllib2, urllib, httplib, sgmllib
-from urllib2 import URLError, HTTPError, BaseHandler
-from cStringIO import StringIO
+import copy, time, tempfile, html.entities, re, logging, socket, \
+       urllib.request, \
+       urllib.error, \
+       urllib.parse, urllib.request, urllib.parse, urllib.error, http.client, sgmllib
+from urllib.error import URLError, HTTPError
+from urllib.request import BaseHandler
+from io import StringIO
 
-from _request import Request
-from _util import isstringlike
-from _response import closeable_response, response_seek_wrapper
-from _html import unescape, unescape_charref
-from _headersutil import is_html
-from _clientcookie import CookieJar, request_host
-import _rfc3986
+from ._request import Request
+from ._util import isstringlike
+from ._response import closeable_response, response_seek_wrapper
+from ._html import unescape, unescape_charref
+from ._headersutil import is_html
+from ._clientcookie import CookieJar, request_host
+from . import _rfc3986
 
 debug = logging.getLogger("mechanize").debug
 
@@ -99,9 +102,9 @@ class HTTPRedirectHandler(BaseHandler):
     def http_error_302(self, req, fp, code, msg, headers):
         # Some servers (incorrectly) return multiple Location headers
         # (so probably same goes for URI).  Use first header.
-        if headers.has_key('location'):
+        if 'location' in headers:
             newurl = headers.getheaders('location')[0]
-        elif headers.has_key('uri'):
+        elif 'uri' in headers:
             newurl = headers.getheaders('uri')[0]
         else:
             return
@@ -149,7 +152,7 @@ class AbstractHeadParser:
     head_elems = ("html", "head",
                   "title", "base",
                   "script", "style", "meta", "link", "object")
-    _entitydefs = htmlentitydefs.name2codepoint
+    _entitydefs = html.entities.name2codepoint
     _encoding = DEFAULT_ENCODING
 
     def __init__(self):
@@ -184,7 +187,7 @@ class AbstractHeadParser:
     def unescape_attrs(self, attrs):
         #debug("%s", attrs)
         escaped_attrs = {}
-        for key, val in attrs.items():
+        for key, val in list(attrs.items()):
             escaped_attrs[key] = self.unescape_attr(val)
         return escaped_attrs
 
@@ -196,14 +199,14 @@ class AbstractHeadParser:
 
 
 try:
-    import HTMLParser
+    import html.parser
 except ImportError:
     pass
 else:
     class XHTMLCompatibleHeadParser(AbstractHeadParser,
-                                    HTMLParser.HTMLParser):
+                                    html.parser.HTMLParser):
         def __init__(self):
-            HTMLParser.HTMLParser.__init__(self)
+            html.parser.HTMLParser.__init__(self)
             AbstractHeadParser.__init__(self)
 
         def handle_starttag(self, tag, attrs):
@@ -303,7 +306,7 @@ class HTTPEquivProcessor(BaseHandler):
                     html_headers = parse_head(response, self.head_parser_class())
                 finally:
                     response.seek(0)
-            except (HTMLParser.HTMLParseError,
+            except (html.parser.HTMLParseError,
                     sgmllib.SGMLParseError):
                 pass
             else:
@@ -342,15 +345,15 @@ class HTTPCookieProcessor(BaseHandler):
     https_response = http_response
 
 try:
-    import robotparser
+    import urllib.robotparser
 except ImportError:
     pass
 else:
-    class MechanizeRobotFileParser(robotparser.RobotFileParser):
+    class MechanizeRobotFileParser(urllib.robotparser.RobotFileParser):
 
         def __init__(self, url='', opener=None):
-            import _opener
-            robotparser.RobotFileParser.__init__(self, url)
+            from . import _opener
+            urllib.robotparser.RobotFileParser.__init__(self, url)
             self._opener = opener
 
         def set_opener(self, opener=None):
@@ -365,10 +368,10 @@ else:
             req = Request(self.url, unverifiable=True, visit=False)
             try:
                 f = self._opener.open(req)
-            except HTTPError, f:
+            except HTTPError as f:
                 pass
-            except (IOError, socket.error, OSError), exc:
-                robotparser._debug("ignoring error opening %r: %s" %
+            except (IOError, socket.error, OSError) as exc:
+                urllib.robotparser._debug("ignoring error opening %r: %s" %
                                    (self.url, exc))
                 return
             lines = []
@@ -379,17 +382,17 @@ else:
             status = f.code
             if status == 401 or status == 403:
                 self.disallow_all = True
-                robotparser._debug("disallow all")
+                urllib.robotparser._debug("disallow all")
             elif status >= 400:
                 self.allow_all = True
-                robotparser._debug("allow all")
+                urllib.robotparser._debug("allow all")
             elif status == 200 and lines:
-                robotparser._debug("parse lines")
+                urllib.robotparser._debug("parse lines")
                 self.parse(lines)
 
-    class RobotExclusionError(urllib2.HTTPError):
+    class RobotExclusionError(urllib.error.HTTPError):
         def __init__(self, request, *args):
-            apply(urllib2.HTTPError.__init__, (self,)+args)
+            urllib.error.HTTPError.__init__(*(self,)+args)
             self.request = request
 
     class HTTPRobotRulesProcessor(BaseHandler):
@@ -397,7 +400,7 @@ else:
         handler_order = 800
 
         try:
-            from httplib import HTTPMessage
+            from http.client import HTTPMessage
         except:
             from mimetools import Message
             http_response_class = Message
@@ -544,7 +547,7 @@ class HTTPRefreshProcessor(BaseHandler):
     def http_response(self, request, response):
         code, msg, hdrs = response.code, response.msg, response.info()
 
-        if code == 200 and hdrs.has_key("refresh"):
+        if code == 200 and "refresh" in hdrs:
             refresh = hdrs.getheaders("refresh")[0]
             try:
                 pause, newurl = parse_refresh_header(refresh)
@@ -600,10 +603,10 @@ class HTTPDefaultErrorHandler(BaseHandler):
         # place rather than a response object, I don't know, but to avoid
         # multiple wrapping, we're discarding them
 
-        if isinstance(fp, urllib2.HTTPError):
+        if isinstance(fp, urllib.error.HTTPError):
             response = fp
         else:
-            response = urllib2.HTTPError(
+            response = urllib.error.HTTPError(
                 req.get_full_url(), code, msg, hdrs, fp)
         assert code == response.code
         assert msg == response.msg
@@ -631,8 +634,8 @@ class AbstractHTTPHandler(BaseHandler):
                     'Content-type',
                     'application/x-www-form-urlencoded')
 
-        scheme, sel = urllib.splittype(request.get_selector())
-        sel_host, sel_path = urllib.splithost(sel)
+        scheme, sel = urllib.parse.splittype(request.get_selector())
+        sel_host, sel_path = urllib.parse.splithost(sel)
         if not request.has_header('Host'):
             request.add_unredirected_header('Host', sel_host or host)
         for name, value in self.parent.addheaders:
@@ -669,11 +672,11 @@ class AbstractHTTPHandler(BaseHandler):
         # request.
         headers["Connection"] = "close"
         headers = dict(
-            [(name.title(), val) for name, val in headers.items()])
+            [(name.title(), val) for name, val in list(headers.items())])
         try:
             h.request(req.get_method(), req.get_selector(), req.data, headers)
             r = h.getresponse()
-        except socket.error, err: # XXX what error?
+        except socket.error as err: # XXX what error?
             raise URLError(err)
 
         # Pick apart the HTTPResponse object to get the addinfourl
@@ -697,7 +700,7 @@ class AbstractHTTPHandler(BaseHandler):
 
 class HTTPHandler(AbstractHTTPHandler):
     def http_open(self, req):
-        return self.do_open(httplib.HTTPConnection, req)
+        return self.do_open(http.client.HTTPConnection, req)
 
     http_request = AbstractHTTPHandler.do_request_
 
@@ -708,7 +711,7 @@ if hasattr(httplib, 'HTTPS'):
             self._key_file = key_file
             self._cert_file = cert_file
         def __call__(self, hostport):
-            return httplib.HTTPSConnection(
+            return http.client.HTTPSConnection(
                 hostport,
                 key_file=self._key_file, cert_file=self._cert_file)
 
@@ -723,7 +726,7 @@ if hasattr(httplib, 'HTTPS'):
                     req.get_full_url())
                 conn_factory = HTTPSConnectionFactory(key_file, cert_file)
             else:
-                conn_factory = httplib.HTTPSConnection
+                conn_factory = http.client.HTTPSConnection
             return self.do_open(conn_factory, req)
 
         https_request = AbstractHTTPHandler.do_request_
