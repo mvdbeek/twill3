@@ -5,13 +5,13 @@ with open("README.md", "r") as fh:
 
 setup(
     name='twill3',
-    version='3.11.18',
+    version='0.11.2',
     scripts=['twill'],
     packages=find_packages(),
     author='Jon Froiland',
     author_email='jon.froiland@gmail.com',
-    description='Update to twill3 for Python3 compatibility',
-    long_description='Using 2to3, refactored code for Python3. Version references <Python Version>.<month>.<year>',
+    description='Update twill for Python3 compatibility',
+    long_description='Using 2to3, refactored code for Python3. Version references <version>.<month>.<change>',
     long_description_content_type='text/markdown',
     url='',
     classifiers=[
