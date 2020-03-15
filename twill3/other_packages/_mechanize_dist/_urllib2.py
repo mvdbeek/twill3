@@ -43,6 +43,3 @@ from ._seek import \
 ## from _gzip import \
 ##      HTTPGzipProcessor
 import http.client
-if hasattr(httplib, 'HTTPS'):
-    from ._http import HTTPSHandler
-del httplib

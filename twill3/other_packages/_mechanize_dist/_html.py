@@ -9,8 +9,9 @@ included with the distribution).
 """
 
 import re, copy, html.entities
-import sgmllib, html.parser, ClientForm
+import sgmllib, html.parser
 
+from . import ClientForm
 from . import _request
 from ._headersutil import split_header_words, is_html as _is_html
 from . import _rfc3986

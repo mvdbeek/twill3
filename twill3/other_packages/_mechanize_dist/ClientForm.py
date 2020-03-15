@@ -58,48 +58,32 @@ COPYING.txt included with the distribution).
 # XForms?  Don't know if there's a need here.
 
 
-try: True
-except NameError:
-    True = 1
-    False = 0
+import logging
+_logger = logging.getLogger("ClientForm")
+OPTIMIZATION_HACK = True
 
-try: bool
-except NameError:
-    def bool(expr):
-        if expr: return True
-        else: return False
+def debug(msg, *args, **kwds):
+    if OPTIMIZATION_HACK:
+        return
 
-try:
-    import logging
-except ImportError:
-    def debug(msg, *args, **kwds):
-        pass
-else:
-    _logger = logging.getLogger("ClientForm")
-    OPTIMIZATION_HACK = True
+    try:
+        raise Exception()
+    except:
+        caller_name = (
+            sys.exc_info()[2].tb_frame.f_back.f_back.f_code.co_name)
+    extended_msg = '%%s %s' % msg
+    extended_args = (caller_name,)+args
+    debug = _logger.debug(extended_msg, *extended_args, **kwds)
 
-    def debug(msg, *args, **kwds):
-        if OPTIMIZATION_HACK:
-            return
+def _show_debug_messages():
+    global OPTIMIZATION_HACK
+    OPTIMIZATION_HACK = False
+    _logger.setLevel(logging.DEBUG)
+    handler = logging.StreamHandler(sys.stdout)
+    handler.setLevel(logging.DEBUG)
+    _logger.addHandler(handler)
 
-        try:
-            raise Exception()
-        except:
-            caller_name = (
-                sys.exc_info()[2].tb_frame.f_back.f_back.f_code.co_name)
-        extended_msg = '%%s %s' % msg
-        extended_args = (caller_name,)+args
-        debug = _logger.debug(extended_msg, *extended_args, **kwds)
-
-    def _show_debug_messages():
-        global OPTIMIZATION_HACK
-        OPTIMIZATION_HACK = False
-        _logger.setLevel(logging.DEBUG)
-        handler = logging.StreamHandler(sys.stdout)
-        handler.setLevel(logging.DEBUG)
-        _logger.addHandler(handler)
-
-import sys, urllib.request, urllib.parse, urllib.error, urllib.request, urllib.error, urllib.parse, types, mimetools, copy, urllib.parse, \
+import sys, urllib.request, urllib.parse, urllib.error, urllib.request, urllib.error, urllib.parse, types, copy, urllib.parse, \
        html.entities, re, random
 from io import StringIO
 
@@ -444,7 +428,7 @@ class ItemCountError(ValueError): pass
 if HAVE_MODULE_HTMLPARSER:
     SGMLLIB_PARSEERROR = sgmllib.SGMLParseError
     class ParseError(sgmllib.SGMLParseError,
-                     html.parser.HTMLParseError,
+                     Exception,
                      ):
         pass
 else:
