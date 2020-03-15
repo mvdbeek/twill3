@@ -28,10 +28,10 @@ class ResultWrapper(object):
         gfEntry = html.FormElement
         orphans = self.lxml.xpath('//input[not(ancestor::form)]')
         if len(orphans) > 0:
-            gloFo = "<form>"
+            gloFo = b"<form>"
             for o in orphans:
                 gloFo += etree.tostring(o)
-            gloFo += "</form>"
+            gloFo += b"</form>"
             self.forms = html.fromstring(gloFo).forms
             self.forms.extend(self.lxml.forms)
         else:
@@ -87,7 +87,7 @@ class ResultWrapper(object):
                 return f
 
         # next try regexps
-        regexp = re.compile(formname)
+        regexp = re.compile(str(formname))
         for f in forms:
             if f.get("name") and regexp.search(f.get("name")):
                 return f
@@ -196,6 +196,12 @@ def make_boolean(value):
             return True
         return False
 
+    # yes/no
+    if value in ('yes', 'no'):
+        if value == 'yes':
+            return True
+        return False
+
     raise TwillException("unable to convert '%s' into true/false" % (value,))
 
 
@@ -215,20 +221,11 @@ def set_form_control_value(control, val):
             pass
 
     elif isinstance(control, html.CheckboxGroup):
-        if val.startswith('-'):
-            val = val[1:]
-            flag = False
-        else:
-            flag = True
-            if val.startswith('+'):
-                val = val[1:]
-        if flag:
-            control.value.add(val)
-        else:
-            try:
-                control.value.remove(val)
-            except KeyError:
-                pass
+        for v in val.split(','):
+            control.value.add(v)
+
+    elif isinstance(control, html.RadioGroup):
+        control.value = val
 
     elif isinstance(control, html.SelectElement):
         #
@@ -255,6 +252,8 @@ def set_form_control_value(control, val):
             if (val == k or val == v) and flag:
                 if hasattr(control, 'checkable') and control.checkable:
                     control.checked = flag
+                elif isinstance(control.value, str):
+                     control.value = v
                 else:
                     control.value.add(v)
                 return
@@ -267,10 +266,9 @@ def set_form_control_value(control, val):
         raise TwillException
 
     else:
-        if (hasattr(control, 'type') and control.type != 'submit'):
-            control.value = val
-        # else:
-        # raise(TwillException("Attempt to set value on invalid control"))
+        # Don't know what control this is,
+        # assume control type and val are set correcly.
+        control.value = val
 
 
 def _all_the_same_submit(matches):

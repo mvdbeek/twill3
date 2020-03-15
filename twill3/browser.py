@@ -226,10 +226,13 @@ class TwillBrowser(object):
         """
         if fieldname in list(form.fields.keys()):
             controls = [
-                f for f in form.inputs if f.get("name") == fieldname and hasattr(f, 'type') and f.type == 'checkbox'
+                f for f in form.inputs if f.get("name") == fieldname and hasattr(f, 'type') and f.type in ('checkbox', 'radio')
             ]
             if len(controls) > 1:
-                return html.CheckboxGroup(controls)
+                if controls[0].type == 'checkbox':
+                    return html.CheckboxGroup(controls)
+                else:
+                    return html.RadioGroup(controls)
 
         fieldname = str(fieldname)
 
@@ -330,8 +333,12 @@ class TwillBrowser(object):
                 form = forms[0]
             else:
                 raise TwillException('more than one form; you must select one (use fv) before submitting')
+
+        url = self.get_url()
         if form.action is None:
             form.action = self.get_url()
+        else:
+            form_action = urllib.parse.urljoin(url, form.action)
 
         # no fieldname?  see if we can use the last submit button clicked...
         if fieldname is None:
@@ -366,7 +373,7 @@ class TwillBrowser(object):
 
         # @BRT: For now, the referrer is always the current page
         # @CTB this seems like an issue for further work.
-        headers = {'referer': self.get_url()}
+        headers = {'referer': url}
 
         #
         # add referer information.  this may require upgrading the
@@ -376,25 +383,25 @@ class TwillBrowser(object):
         #
         # now actually GO.
         #
-        payload = list(form.form_values())
+        payload = [(_, form.inputs[_].value) for _ in form.fields.keys()]
         if ctl is not None and ctl.get("name") is not None:
             payload.append((ctl.get("name"), ctl.value))
         if form.method == 'POST':
             if len(self._formFiles) != 0:
                 r = self._session.post(
-                    form.action,
+                    form_action,
                     data=payload,
                     files=self._formFiles,
-                    headers=headers
+                    headers=headers,
                 )
             else:
                 r = self._session.post(
-                    form.action,
+                    form_action,
                     data=payload,
-                    headers=headers
+                    headers=headers,
                 )
         else:
-            r = self._session.get(form.action, data=payload, headers=headers)
+            r = self._session.get(form_action, data=payload, headers=headers)
 
         self._formFiles.clear()
         self._history.append(self.result)
@@ -443,22 +450,23 @@ class TwillBrowser(object):
         """
         Checks a document for meta redirection
         """
-        html_tree = html.fromstring(r.text)
-        attr = html_tree.xpath(
-            "//meta[translate(@http-equiv, 'REFSH', 'refsh') = 'refresh']/@content"
-        )
-        if len(attr) > 0:
-            wait, text = attr[0].split(";")
-            # @BRT: Strip surrounding quotes and ws; less brute force method?
-            #       Other chars that need to be dealt with?
-            text = text.strip()
-            text = text.strip('\'')
-            if text.lower().startswith("url="):
-                url = text[4:]
-                if not url.startswith('http'):
-                    # Relative URL, adapt
-                    url = urllib.parse.urljoin(r.url, url)
-                    return True, url
+        if r.text:
+            html_tree = html.fromstring(r.text)
+            attr = html_tree.xpath(
+                "//meta[translate(@http-equiv, 'REFSH', 'refsh') = 'refresh']/@content"
+            )
+            if len(attr) > 0:
+                wait, text = attr[0].split(";")
+                # @BRT: Strip surrounding quotes and ws; less brute force method?
+                #       Other chars that need to be dealt with?
+                text = text.strip()
+                text = text.strip('\'')
+                if text.lower().startswith("url="):
+                    url = text[4:]
+                    if not url.startswith('http'):
+                        # Relative URL, adapt
+                        url = urllib.parse.urljoin(r.url, url)
+                        return True, url
         return False, None
 
     # BRT: Added to test for meta redirection
@@ -519,5 +527,5 @@ class TwillBrowser(object):
             # If we're really reloading and just didn't say so, don't store
             if self.result is not None and self.result.get_url() != r.url:
                 self._history.append(self.result)
-
-        self.result = ResultWrapper(r)
+        if r.text:
+            self.result = ResultWrapper(r)

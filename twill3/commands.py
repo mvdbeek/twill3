@@ -462,7 +462,7 @@ def formvalue(formname, fieldname, value):
     control = browser.get_form_field(form, fieldname)
 
     browser.clicked(form, control)
-    if isinstance(control, html.CheckboxGroup):
+    if isinstance(control, (html.CheckboxGroup, html.RadioGroup)):
         pass
 
     elif 'readonly' in list(control.attrib.keys()) and \

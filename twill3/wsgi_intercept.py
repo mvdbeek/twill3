@@ -301,7 +301,14 @@ class wsgi_fake_socket:
 # WSGI_HTTPConnection
 #
 
-class WSGI_HTTPConnection(HTTPConnection):
+class _HTTPConnection(HTTPConnection):
+
+    def __init__(self, **kwds):
+        kwds.pop('strict')
+        super(_HTTPConnection, self).__init__(**kwds)
+
+
+class WSGI_HTTPConnection(_HTTPConnection):
     """
     Intercept all traffic to certain hosts & redirect into a WSGI
     application object.
