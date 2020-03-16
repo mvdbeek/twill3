@@ -73,6 +73,8 @@ class TwillBrowser(object):
         # if this is an absolute URL that is just missing the 'http://' at
         # the beginning, try fixing that.
         if url.find('://') == -1:
+            if url.startswith('.'):
+                url = url[1:]
             full_url = 'http://%s' % (url,)  # mimic browser behavior
             try_urls.append(full_url)
 
