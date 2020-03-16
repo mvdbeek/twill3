@@ -99,6 +99,8 @@ class TwillCommandLoop(Singleton, cmd.Cmd):
     Note: most of the do_ and help_ functions are dynamically created
     by the metaclass.
     """
+    def __init__(self, initial_url=None, fail_on_unknown=False, **kwargs):
+        super(TwillCommandLoop, self).__init__(**kwargs)
 
     def init(self, **kw):
         if 'stdin' in kw:
