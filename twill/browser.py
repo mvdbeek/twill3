@@ -336,7 +336,7 @@ class TwillBrowser(object):
 
         url = self.get_url()
         if form.action is None:
-            form.action = self.get_url()
+            form_action = self.get_url()
         else:
             form_action = urllib.parse.urljoin(url, form.action)
 
