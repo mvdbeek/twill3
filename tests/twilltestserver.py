@@ -529,7 +529,7 @@ class HttpAuthRestricted(AccessControlled, Directory):
         ha = r.get_environ('HTTP_AUTHORIZATION', None)
         if ha:
             auth_type, auth_string = ha.split()
-            login, passwd = base64.decodestring(auth_string).split(':')
+            login, passwd = base64.decodestring(auth_string.encode('utf-8')).decode('utf-8').split(':')
  
             if login == 'test' and passwd == 'password':
                 return
