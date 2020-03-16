@@ -19,5 +19,5 @@ setup(
         'Programming Language :: Python :: 3.6',
         'License :: OSI Approved :: MIT License',
         'Operating System :: OS Independent',
-    ], install_requires=['lxml', 'cssselect', 'requests', 'pyparsing']
+    ], install_requires=['lxml', 'cssselect', 'requests', 'sgmllib', 'pyparsing']
 )
