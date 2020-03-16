@@ -221,8 +221,20 @@ def set_form_control_value(control, val):
             pass
 
     elif isinstance(control, html.CheckboxGroup):
-        for v in val.split(','):
-            control.value.add(v)
+        if val.startswith('-'):
+            val = val[1:]
+            flag = False
+        else:
+            flag = True
+            if val.startswith('+'):
+                val = val[1:]
+        if flag:
+            control.value.add(val)
+        else:
+            try:
+                control.value.remove(val)
+            except KeyError:
+                pass
 
     elif isinstance(control, html.RadioGroup):
         control.value = val
