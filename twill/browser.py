@@ -385,10 +385,19 @@ class TwillBrowser(object):
         #
         # now actually GO.
         #
-        # payload = [(_, form.inputs[_].value) for _ in form.fields.keys()]
-        payload = form.form_values()
+        form_values = form.form_values()
         if ctl is not None and ctl.get("name") is not None:
-            payload.append((ctl.get("name"), ctl.value))
+            form_values.append((ctl.get("name"), ctl.value))
+        radio = {k: form.inputs[k].value for k in form.fields.keys() if isinstance(form.inputs[k], html.RadioGroup)}
+        payload = []
+        augment = set()
+        for (k, v) in form_values:
+            if k in radio:
+                augment.add(k)
+            else:
+                payload.append((k, v))
+        for k in augment:
+            payload.append((k, radio[k]))
         if form.method == 'POST':
             if len(self._formFiles) != 0:
                 r = self._session.post(
