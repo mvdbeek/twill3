@@ -9,6 +9,8 @@ jobs:
       matrix:
         python-version: [3.5, 3.6, 3.7, 3.8]
     steps:
+    - name: Install expect
+      run: apt-get install -y expect
     - uses: actions/checkout@v2
     - uses: actions/setup-python@v1
       with:
