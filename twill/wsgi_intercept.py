@@ -8,7 +8,7 @@ Use 'add_wsgi_intercept' and 'remove_wsgi_intercept' to control this behavior.
 import sys
 from http.client import HTTPConnection
 import urllib.request, urllib.parse, urllib.error
-from io import StringIO
+from io import BytesIO, StringIO
 import traceback
 
 debuglevel = 0
@@ -69,6 +69,7 @@ def make_environ(inp, host, port, script_name):
 
     environ = {}
     
+    inp = StringIO(inp.read().decode())
     method_line = inp.readline()
     
     content_type = None
@@ -126,7 +127,7 @@ def make_environ(inp, host, port, script_name):
         print(("method: %s; script_name: %s; path_info: %s; query_string: %s" % (method, script_name, path_info, query_string)))
 
     r = inp.read()
-    inp = StringIO(r)
+    inp = BytesIO(r.encode('utf-8'))
 
     #
     # fill out our dictionary.
@@ -135,7 +136,7 @@ def make_environ(inp, host, port, script_name):
     environ.update({ "wsgi.version" : (1,0),
                      "wsgi.url_scheme": "http",
                      "wsgi.input" : inp,           # to read for POSTs
-                     "wsgi.errors" : StringIO(),
+                     "wsgi.errors" : BytesIO(),
                      "wsgi.multithread" : 0,
                      "wsgi.multiprocess" : 0,
                      "wsgi.run_once" : 0,
@@ -200,10 +201,10 @@ class wsgi_fake_socket:
         self.port = port
         self.script_name = script_name  # SCRIPT_NAME (app mount point)
 
-        self.inp = StringIO()           # stuff written into this "socket"
+        self.inp = BytesIO()           # stuff written into this "socket"
         self.write_results = []          # results from the 'write_fn'
         self.results = None             # results from running the app
-        self.output = StringIO()        # all output from the app, incl headers
+        self.output = BytesIO()        # all output from the app, incl headers
 
     def makefile(self, *args, **kwargs):
         """
@@ -223,19 +224,23 @@ class wsgi_fake_socket:
 
         def start_response(status, headers, exc_info=None):
             # construct the HTTP request.
-            self.output.write("HTTP/1.0 " + status + "\n")
+            status = "HTTP/1.0 " + status + "\n"
+            self.output.write(status.encode('utf-8'))
             
             for k, v in headers:
-                self.output.write('%s: %s\n' % (k, v,))
-            self.output.write('\n')
+                header_line = '%s: %s\n' % (k, v,)
+                self.output.write(header_line.encode('utf-8'))
+            self.output.write(b'\n')
 
             def write_fn(s):
+                if isinstance(s, str):
+                    s = s.encode('utf-8')
                 self.write_results.append(s)
             return write_fn
 
         # construct the wsgi.input file from everything that's been
         # written to this "socket".
-        inp = StringIO(self.inp.getvalue())
+        inp = BytesIO(self.inp.getvalue())
 
         # build the environ dictionary.
         environ = make_environ(inp, self.host, self.port, self.script_name)
@@ -259,7 +264,7 @@ class wsgi_fake_socket:
         try:
             generator_data = None
             try:
-                generator_data = next(self.result)
+                generator_data = next(self.result).encode('utf-8')
 
             finally:
                 for data in self.write_results:
@@ -282,7 +287,7 @@ class wsgi_fake_socket:
             print(("***", self.output.getvalue(), "***"))
 
         # return the concatenated results.
-        return StringIO(self.output.getvalue())
+        return BytesIO(self.output.getvalue())
 
     def sendall(self, str):
         """
