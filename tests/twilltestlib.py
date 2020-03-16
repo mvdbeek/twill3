@@ -60,8 +60,8 @@ def execute_twill_shell(filename, inp=None, initial_url=None,
     # use filename as the stdin *for the shell object only*
     scriptfile = os.path.join(testdir, filename)
     
-    cmd_inp = open(scriptfile).read()
-    cmd_inp += '\nquit\n'
+    with open(scriptfile) as fh:
+        cmd_inp = "%s\nquit\n" % fh.read()
     cmd_inp = StringIO(cmd_inp)
 
     # use inp as the std input for the actual script commands.

@@ -176,14 +176,20 @@ def execute_file(filename, **kw):
     Execute commands from a file.
     """
     # read the input lines
-    if filename == "-":
-        inp = sys.stdin
-    else:
-        inp = open(filename)
+    close_file = False
+    try:
+        if filename == "-":
+            inp = sys.stdin
+        else:
+            inp = open(filename)
+            close_file = True
 
-    kw['source'] = filename
+        kw['source'] = filename
 
-    _execute_script(inp, **kw)
+        _execute_script(inp, **kw)
+    finally:
+        if close_file:
+            inp.close()
 
 
 def _execute_script(inp, **kw):
