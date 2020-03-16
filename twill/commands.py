@@ -425,7 +425,7 @@ def formclear(formname):
             control.value = []
         else:
             if control.value is not None:
-                control._value__del()
+                control.value = None
     browser.last_submit_button = None
 
 
