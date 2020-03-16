@@ -6,6 +6,7 @@ import sys, os
 from . import twilltestlib
 from io import StringIO
 import twill.shell
+from twill.errors import TwillNameError
 
 def setup_module():
     global url
@@ -19,7 +20,7 @@ def test_shell_specific():
         twilltestlib.execute_twill_shell('test-shell-fail.twill',
                                          initial_url=url,
                                          fail_on_unknown=True)
-    except NameError:
+    except TwillNameError:
         pass
     
 def test_most_commands():
