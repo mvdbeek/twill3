@@ -385,7 +385,8 @@ class TwillBrowser(object):
         #
         # now actually GO.
         #
-        payload = [(_, form.inputs[_].value) for _ in form.fields.keys()]
+        # payload = [(_, form.inputs[_].value) for _ in form.fields.keys()]
+        payload = form.form_values()
         if ctl is not None and ctl.get("name") is not None:
             payload.append((ctl.get("name"), ctl.value))
         if form.method == 'POST':
