@@ -3,4 +3,4 @@
 *.bak
 build/
 dist/
-twill3.*/
+twill.*/
