@@ -1,6 +1,6 @@
 """
-Implementation of all of the individual 'twill3' commands available through
-twill3-sh.
+Implementation of all of the individual 'twill' commands available through
+twill-sh.
 """
 
 import sys
@@ -99,7 +99,7 @@ def exit(code="0"):
     """
     exit [<code>]
 
-    Exits twill3, with the given exit code (defaults to 0, "no error").
+    Exits twill, with the given exit code (defaults to 0, "no error").
     """
     raise SystemExit(int(code))
 
@@ -541,7 +541,7 @@ def extend_with(module_name):
 
     ###
 
-    import twill3.shell, twill3.parse
+    import twill.shell, twill.parse
 
     fnlist = getattr(mod, '__all__', None)
     if fnlist is None:
@@ -549,15 +549,15 @@ def extend_with(module_name):
 
     for command in fnlist:
         fn = getattr(mod, command)
-        twill3.shell.add_command(command, fn.__doc__)
-        twill3.parse.command_list.append(command)
+        twill.shell.add_command(command, fn.__doc__)
+        twill.parse.command_list.append(command)
 
     ###
 
     print("Imported extension module '%s'." % (module_name,), file=OUT)
     print("(at %s)\n" % (mod.__file__,), file=OUT)
 
-    if twill3.shell.interactive:
+    if twill.shell.interactive:
         if mod.__doc__:
             print("Description:\n\n%s\n" % (mod.__doc__.strip(),), file=OUT)
         else:
@@ -780,42 +780,42 @@ def redirect_output(filename):
     """
     >> redirect_output <filename>
 
-    Append all twill3 output to the given file.
+    Append all twill output to the given file.
     """
-    import twill3
+    import twill
     fp = open(filename, 'a')
-    twill3.set_output(fp)
+    twill.set_output(fp)
 
 
 def reset_output():
     """
     >> reset_output
 
-    Reset twill3 output to go to the screen.
+    Reset twill output to go to the screen.
     """
-    import twill3
-    twill3.set_output(None)
+    import twill
+    twill.set_output(None)
 
 
 def redirect_error(filename):
     """
     >> redirect_error <filename>
 
-    Append all twill3 error output to the given file.
+    Append all twill error output to the given file.
     """
-    import twill3
+    import twill
     fp = open(filename, 'a')
-    twill3.set_errout(fp)
+    twill.set_errout(fp)
 
 
 def reset_error():
     """
     >> reset_error
     
-    Reset twill3 error output to go to the screen.
+    Reset twill error output to go to the screen.
     """
-    import twill3
-    twill3.set_errout(None)
+    import twill
+    twill.set_errout(None)
 
 
 def add_extra_header(header_key, header_value):

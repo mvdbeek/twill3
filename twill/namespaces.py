@@ -7,17 +7,17 @@ global_dict = {}
 
 def init_global_dict():
     """
-    Initialize global dictionary with twill3 commands.
+    Initialize global dictionary with twill commands.
 
     This must be done after all the other modules are loaded, so that all
     of the commands are already defined.
     """
-    exec("from twill3.commands import *", global_dict)
-    import twill3.commands
-    command_list = twill3.commands.__all__
+    exec("from twill.commands import *", global_dict)
+    import twill.commands
+    command_list = twill.commands.__all__
 
-    import twill3.parse
-    twill3.parse.command_list.extend(command_list)
+    import twill.parse
+    twill.parse.command_list.extend(command_list)
 
 
 # local dictionaries.

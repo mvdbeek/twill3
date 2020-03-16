@@ -8,7 +8,7 @@ Commands:
    
 """
 
-import twill3.utils
+import twill.utils
 
 def get_args(require=0):
     """
@@ -17,14 +17,14 @@ def get_args(require=0):
     Load the command line arguments after the last '--' into $arg1...$argN,
     optionally requiring at least 'require' such arguments.
     """
-    from twill3 import commands, namespaces, shell, errors
+    from twill import commands, namespaces, shell, errors
 
     global_dict, local_dict = namespaces.get_twill_glocals()
 
     require = int(require)
 
     if len(shell.twillargs) < require:
-        from twill3.errors import TwillAssertionError
+        from twill.errors import TwillAssertionError
         raise TwillAssertionError("too few arguments; %d rather than %d" % \
                                     (len(shell.twillargs), require,))
 

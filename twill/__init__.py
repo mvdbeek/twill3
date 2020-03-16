@@ -1,6 +1,6 @@
-# This file is part of the twill3 source distribution.
+# This file is part of the twill source distribution.
 #
-# twill3 is a extensible scriptlet language for testing Web apps,
+# twill is a extensible scriptlet language for testing Web apps,
 # available at http://twill.idyll.org/.
 #
 # Contact author: C. Titus Brown, titus@idyll.org.
@@ -14,7 +14,7 @@
 # go to http://www.opensource.org/licenses/mit-license.php.
 
 """
-twill3 Web testing language & associated utilities.
+twill Web testing language & associated utilities.
 """
 
 __version__ = "3.11.18"
@@ -34,15 +34,15 @@ __all__ = [ "TwillCommandLoop",
             "set_errout"]
 
 #
-# add extensions (twill3/extensions) and the the wwwsearch & pyparsing
-# stuff from twill3/included-packages/.  NOTE: this works with eggs! hooray!
+# add extensions (twill/extensions) and the the wwwsearch & pyparsing
+# stuff from twill/included-packages/.  NOTE: this works with eggs! hooray!
 #
 
 import sys, os.path
 thisdir = os.path.dirname(__file__)
 
 # add extensions directory at the *end* of sys.path.  This means that
-# user extensions will take priority over twill3 extensions.
+# user extensions will take priority over twill extensions.
 extensions = os.path.join(thisdir, 'extensions')
 sys.path.append(extensions)
 
@@ -51,7 +51,7 @@ sys.path.append(extensions)
 wwwsearchlib = os.path.join(thisdir, 'other_packages')
 sys.path.insert(0, wwwsearchlib)
 
-# the two core components of twill3:
+# the two core components of twill:
 from .shell import TwillCommandLoop
 from .parse import execute_file, execute_string
 
@@ -61,7 +61,7 @@ from .commands import get_browser
 def get_browser_state():
     import warnings
     warnings.warn("""\
-get_browser_state is deprecated; use 'twill3.get_browser() instead.
+get_browser_state is deprecated; use 'twill.get_browser() instead.
 """, DeprecationWarning)
     return get_browser()
 
@@ -73,7 +73,7 @@ from .wsgi_intercept import add_wsgi_intercept, remove_wsgi_intercept
 
 def set_output(fp):
     """
-    Have standard output from twill3 go to the given fp instead of
+    Have standard output from twill go to the given fp instead of
     stdout.  fp=None will reset to stdout.
     """
     from . import commands, browser
@@ -81,7 +81,7 @@ def set_output(fp):
 
 def set_errout(fp):
     """
-    Have error output from twill3 go to the given fp instead of stderr.
+    Have error output from twill go to the given fp instead of stderr.
     fp=None will reset to stderr.
     """
     from . import commands

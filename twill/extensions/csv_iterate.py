@@ -3,7 +3,7 @@ An extension function to iterate over a list of comma-separated values.
 
 Function 'csv_iterate' reads a file containing one or more rows of
 comma-separated columns, assigns them to col1...colN, and, for each row,
-executes the given twill3 script.
+executes the given twill script.
 """
 
 __all__ = ['csv_iterate']
@@ -19,7 +19,7 @@ def csv_iterate(filename, scriptname):
     For each line in <csv_file>, read in a list of comma-separated values,
     put them in $col1...$colN, and execute <script>.
     """
-    from twill3 import namespaces, execute_file, commands
+    from twill import namespaces, execute_file, commands
 
     global_dict, local_dict = namespaces.get_twill_glocals()
 

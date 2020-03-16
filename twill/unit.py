@@ -1,5 +1,5 @@
 """
-Support functionality for using twill3 in unit tests.
+Support functionality for using twill in unit tests.
 """
 
 import os
@@ -45,7 +45,7 @@ class TestInfo:
 
     def run_script(self):
         """
-        Run the given twill3 script on the given server.
+        Run the given twill script on the given server.
         """
         time.sleep(self.sleep)
         url = self.get_url()
@@ -72,7 +72,7 @@ def run_test(test_info):
         # never returns...
 
     #
-    # run twill3 test script.
+    # run twill test script.
     #
 
     child_pid = pid

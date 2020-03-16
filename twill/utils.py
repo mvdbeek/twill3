@@ -1,7 +1,7 @@
 """
-Various ugly utility functions for twill3.
+Various ugly utility functions for twill.
 
-Apart from various simple utility functions, twill3's robust parsing
+Apart from various simple utility functions, twill's robust parsing
 code is implemented in the ConfigurableParsingFactory class.
 """
 
@@ -376,7 +376,7 @@ def _is_valid_filename(f):
 
 # Added so browser can ask whether to follow meta redirects
 def _follow_equiv_refresh():
-    from twill3.commands import _options
+    from twill.commands import _options
     return _options.get('acknowledge_equiv_refresh')
 
 

@@ -3,8 +3,8 @@ sureshvv's extension for slicing and dicing variables with regular expressions.
 """
 
 import re
-from twill3.namespaces import get_twill_glocals
-from twill3.commands import browser
+from twill.namespaces import get_twill_glocals
+from twill.commands import browser
 
 def showvar(which):
      """

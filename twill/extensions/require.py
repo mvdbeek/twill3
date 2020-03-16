@@ -36,7 +36,7 @@ def _require_post_load_hook(action, *args, **kwargs):
     if action == 'back':                # do nothing on a 'back'
         return
     
-    from twill3 import commands
+    from twill import commands
     OUT=commands.OUT
 
     global ignore_once
@@ -78,7 +78,7 @@ def _require_post_load_hook(action, *args, **kwargs):
 #######
 
 #
-# twill3 command-line functions.
+# twill command-line functions.
 #
 
 def skip_require():
@@ -101,7 +101,7 @@ def require(what):
                       extension module)
     """
     global _requirements
-    from twill3 import commands
+    from twill import commands
 
     #
     # install the post-load hook function.
@@ -127,7 +127,7 @@ def no_require():
 
     Remove all post-load requirements.
     """
-    from twill3 import commands
+    from twill import commands
     
     l = commands.browser._post_load_hooks
     l = [ fn for fn in l if fn != _require_post_load_hook ]

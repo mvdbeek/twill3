@@ -1,12 +1,12 @@
 """
-A command-line interpreter for twill3.
+A command-line interpreter for twill.
 
 This is an implementation of a command-line interpreter based on the
 'Cmd' class in the 'cmd' package of the default Python distribution.
 """
 
 import cmd
-from twill3 import commands, parse, __version__
+from twill import commands, parse, __version__
 from . import namespaces
 
 try:
@@ -17,8 +17,8 @@ except:
 
 def make_cmd_fn(cmd):
     """
-    Dynamically define a twill3 shell command function based on an imported
-    function name.  (This is where the twill3.commands functions actually
+    Dynamically define a twill shell command function based on an imported
+    function name.  (This is where the twill.commands functions actually
     get executed.)
     """
 
@@ -47,7 +47,7 @@ def make_cmd_fn(cmd):
 
 def make_help_cmd(cmd, docstring):
     """
-    Dynamically define a twill3 shell help function for the given
+    Dynamically define a twill shell help function for the given
     command/docstring.
     """
 
@@ -93,7 +93,7 @@ def get_command_shell():
 
 class TwillCommandLoop(Singleton, cmd.Cmd):
     """
-    Command-line interpreter for twill3 commands.  Singleton object: you
+    Command-line interpreter for twill commands.  Singleton object: you
     can't create more than one of these at a time.
 
     Note: most of the do_ and help_ functions are dynamically created
@@ -113,7 +113,7 @@ class TwillCommandLoop(Singleton, cmd.Cmd):
         # import readline history, if available.
         if readline:
             try:
-                readline.read_history_file('.twill3-history')
+                readline.read_history_file('.twill-history')
             except IOError:
                 pass
 
@@ -130,7 +130,7 @@ class TwillCommandLoop(Singleton, cmd.Cmd):
 
         global_dict, local_dict = namespaces.get_twill_glocals()
 
-        ### add all of the commands from twill3.
+        ### add all of the commands from twill.
         for command in parse.command_list:
             fn = global_dict.get(command)
             self.add_command(command, fn.__doc__)
@@ -246,7 +246,7 @@ class TwillCommandLoop(Singleton, cmd.Cmd):
     def do_EOF(self, *args):
         "Exit on CTRL-D"
         if readline:
-            readline.write_history_file('.twill3-history')
+            readline.write_history_file('.twill-history')
 
         raise SystemExit()
 
@@ -254,8 +254,8 @@ class TwillCommandLoop(Singleton, cmd.Cmd):
         print("\nWhat do YOU think the command 'help' does?!?\n")
 
     def do_version(self, *args):
-        print("\ntwill3 version %s.\n" % (__version__,))
-        print("See http://www.idyll.org/~t/www-tools/twill3/ for more info.")
+        print("\ntwill version %s.\n" % (__version__,))
+        print("See http://www.idyll.org/~t/www-tools/twill/ for more info.")
         print("")
 
     def help_version(self):
@@ -265,7 +265,7 @@ class TwillCommandLoop(Singleton, cmd.Cmd):
         raise SystemExit()
 
     def help_exit(self):
-        print("\nExit twill3.\n")
+        print("\nExit twill.\n")
 
     do_quit = do_exit
     help_quit = help_exit
@@ -281,8 +281,8 @@ def main():
     global twillargs, interactive
 
     import sys
-    from twill3 import TwillCommandLoop, execute_file, __version__
-    from twill3.utils import gather_filenames
+    from twill import TwillCommandLoop, execute_file, __version__
+    from twill.utils import gather_filenames
     from optparse import OptionParser
     from io import StringIO
 
@@ -335,7 +335,7 @@ def main():
     (options, args) = parser.parse_args(sysargs)
 
     if options.show_version:
-        print('twill3 version %s.' % (__version__,))
+        print('twill version %s.' % (__version__,))
         sys.exit(0)
 
     if options.quiet:
@@ -385,7 +385,7 @@ def main():
     if not args or options.interact:
         welcome_msg = ""
         if not args:
-            welcome_msg = "\n -= Welcome to twill3! =-\n"
+            welcome_msg = "\n -= Welcome to twill! =-\n"
 
         interactive = True
         shell = TwillCommandLoop(initial_url=options.url)

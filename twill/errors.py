@@ -1,12 +1,12 @@
 class TwillException(Exception):
     """
-    General twill3 exception.
+    General twill exception.
     """
     pass
 
 class TwillAssertionError(TwillException):
     """
-    AssertionError to raise upon failure of some twill3 command.
+    AssertionError to raise upon failure of some twill command.
     """
     pass
 

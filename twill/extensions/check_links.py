@@ -20,8 +20,8 @@ __all__ = ['check_links', 'report_bad_links']
 DEBUG=True
 
 import re
-from twill3 import commands
-from twill3.errors import TwillAssertionError
+from twill import commands
+from twill.errors import TwillAssertionError
 
 ### first, set up config options & persistent 'bad links' memory...
 
@@ -49,7 +49,7 @@ def check_links(pattern = '', visited={}):
     is used to visit the pages, the referrer URL is properly set on the
     visit.
     """
-    from twill3 import commands
+    from twill import commands
 
     if DEBUG:
         print('in check_links')
@@ -163,11 +163,11 @@ def report_bad_links(fail_if_exist='+', flush_bad_links='+'):
     """
     global bad_links_dict
     
-    from twill3 import utils
+    from twill import utils
     fail_if_exist = utils.make_boolean(fail_if_exist)
     flush_bad_links = utils.make_boolean(flush_bad_links)
 
-    from twill3 import commands
+    from twill import commands
     OUT = commands.OUT
 
     if not bad_links_dict:

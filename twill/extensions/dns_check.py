@@ -11,7 +11,7 @@ Functions:
 """
 
 import socket
-from twill3.errors import TwillAssertionError
+from twill.errors import TwillAssertionError
 
 try:
     import dns.resolver

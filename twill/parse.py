@@ -1,5 +1,5 @@
 """
-Code parsing and evaluation for the twill3 mini-language.
+Code parsing and evaluation for the twill mini-language.
 """
 
 import re
@@ -10,7 +10,7 @@ from pyparsing import Word, printables, Optional, \
     alphas, alphanums, ZeroOrMore, restOfLine, Combine, \
     Literal, Group, removeQuotes, CharsNotIn
 
-import twill3.commands as commands
+import twill.commands as commands
 from . import namespaces
 from .errors import TwillAssertionError, TwillNameError
 
@@ -119,7 +119,7 @@ def execute_command(cmd, args, globals_dict, locals_dict, cmdinfo):
     locals_dict['__cmd__'] = cmd
     locals_dict['__args__'] = args
     if cmd not in command_list:
-        raise TwillNameError("unknown twill3 command: '%s'" % (cmd,))
+        raise TwillNameError("unknown twill command: '%s'" % (cmd,))
 
     eval_str = "%s(*__args__)" % (cmd,)
 
@@ -148,7 +148,7 @@ def parse_command(line, globals_dict, locals_dict):
     res = full_command.parseString(line)
     if res:
         if _print_commands:
-            print("twill3: executing cmd '%s'" % (line.strip(),), file=commands.OUT)
+            print("twill: executing cmd '%s'" % (line.strip(),), file=commands.OUT)
 
         args = process_args(res.arguments.asList(), globals_dict, locals_dict)
         return (res.command, args)
