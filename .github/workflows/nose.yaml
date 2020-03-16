@@ -13,13 +13,9 @@ jobs:
     - uses: actions/setup-python@v1
       with:
         python-version: ${{ matrix.python-version }}
-    - name: Cache pip dir
-      uses: actions/cache@v1
-      id: pip-cache
-      with:
-        path: ~/.cache/pip
-        key: pip-cache-${{ matrix.python-version }}-${{ hashFiles('galaxy root/requirements.txt') }}
     - name: Install tox
       run: pip install nose 'quixote>=2.3'
+    - name: Install twill
+      run: pip install .
     - name: run tests
       run: ./nose.sh
