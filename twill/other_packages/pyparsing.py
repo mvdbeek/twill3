@@ -97,9 +97,9 @@ def _ustr(obj):
 def _str2dict(strg):
     return dict( [(c,0) for c in strg] )
 
-alphas     = string.lowercase + string.uppercase
+alphas     = string.ascii_letters
 nums       = string.digits
-hexnums    = nums + "ABCDEFabcdef"
+hexnums    = string.hexdigits
 alphanums  = alphas + nums    
 
 class ParseBaseException(Exception):
